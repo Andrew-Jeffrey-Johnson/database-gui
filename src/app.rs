@@ -1,3 +1,5 @@
+//mod Descriptions;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -7,6 +9,7 @@ pub struct TemplateApp {
 
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
+    description: String,
 }
 
 impl Default for TemplateApp {
@@ -15,6 +18,7 @@ impl Default for TemplateApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
+            description: String::from("Begin typing"),
         }
     }
 }
@@ -78,6 +82,16 @@ impl eframe::App for TemplateApp {
             if ui.button("Increment").clicked() {
                 self.value += 1.0;
             }
+
+            ui.separator();
+
+            let response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
+            //if response.changed() {
+            //    // …
+            //}
+            //if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+            //    // …
+            //}
 
             ui.separator();
 
