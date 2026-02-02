@@ -27,6 +27,24 @@
       buildDeps = [
         pkgs.pkg-config
         pkgs.rustPlatform.bindgenHook
+        pkgs.trunk
+
+        # misc. libraries
+        pkgs.openssl
+
+        # GUI libs
+        pkgs.libxkbcommon
+        pkgs.libGL
+        pkgs.fontconfig
+
+        # wayland libraries
+        pkgs.wayland
+
+        # x11 libraries
+        pkgs.xorg.libXcursor
+        pkgs.xorg.libXrandr
+        pkgs.xorg.libXi
+        pkgs.xorg.libX11
       ];
       devDeps = [
         pkgs.gdb
@@ -59,6 +77,7 @@
         pkgs.mkShell {
           shellHook = ''
             export RUST_SRC_PATH=${pkgs.rustPlatform.rustLibSrc}
+            export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath buildDeps)}"
           '';
           buildInputs = runtimeDeps;
           nativeBuildInputs = buildDeps ++ devDeps ++ [ rustc ];
