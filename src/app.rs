@@ -1,4 +1,4 @@
-//mod Descriptions;
+mod my_database;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -85,11 +85,13 @@ impl eframe::App for TemplateApp {
 
             ui.separator();
 
-            let response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
+            if ui.button("Send Description").clicked() {
+                println!("About to create description");
+                my_database::create_description(&self.description);
+                println!("Created description");
+            }
+            let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
             //if response.changed() {
-            //    // …
-            //}
-            //if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
             //    // …
             //}
 

@@ -1,27 +1,9 @@
 #![warn(clippy::all, rust_2018_idioms)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")] // hide console window on Windows in release
 
-use sqlx::postgres::PgPoolOptions;
-use std::env;
-use dotenv::dotenv;
-
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-#[tokio::main]
-async fn main() -> eframe::Result {
-    // PostgreSQL
-    dotenv().ok();
-
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
-    let pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&database_url)
-        .await
-        .expect("Failed to create pool.");
-
-    println!("Connected to the database!");
-
+fn main() -> eframe::Result {
     //egui
     env_logger::init(); // Log to stderr (if you run with `RUST_LOG=debug`).
 

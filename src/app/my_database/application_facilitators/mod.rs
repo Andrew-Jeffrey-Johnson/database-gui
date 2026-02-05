@@ -22,7 +22,7 @@ pub async fn create_application_facilitator(
 pub async fn get_application_facilitator(
     pool: &sqlx::PgPool, 
     application_facilitator_id: i32) 
-    -> Result<User, sqlx::Error> 
+    -> Result<ApplicationFacilitator, sqlx::Error> 
 {
     let application_facilitator = 
         sqlx::query_as::<_, ApplicationFacilitator>("SELECT * FROM ApplicationFacilitators WHERE id = $1")
@@ -39,10 +39,10 @@ pub async fn update_application_facilitator(
     new_website: &str) 
     -> Result<(), sqlx::Error> 
 {
-    sqlx::query("UPDATE ApplicationFacilitators SET email = $1, user_id = $2 WHERE id = $3")
+    sqlx::query("UPDATE ApplicationFacilitators SET email = $1, application_facilitator_id = $2 WHERE id = $3")
         .bind(new_name)
         .bind(new_website)
-        .bind(user_id)
+        .bind(application_facilitator_id)
         .execute(pool)
         .await?;
     Ok(())

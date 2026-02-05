@@ -9,7 +9,7 @@ pub async fn create_description(
     original_text: &str) 
     -> Result<(), sqlx::Error> 
 {
-    sqlx::query("INSERT INTO Descriptions (original_text) VALUES ($1)")
+    sqlx::query("INSERT INTO public.\"Descriptions\" (original_text) VALUES ($1)")
         .bind(original_text)
         .execute(pool)
         .await?;
@@ -21,7 +21,7 @@ pub async fn get_description(
     description_id: i32) 
     -> Result<Description, sqlx::Error> 
 {
-    let description = sqlx::query_as::<_, User>("SELECT * FROM Descriptions WHERE id = $1")
+    let description = sqlx::query_as::<_, Description>("SELECT * FROM public.\"Descriptions\" WHERE id = $1")
         .bind(description_id)
         .fetch_one(pool)
         .await?;
@@ -34,7 +34,7 @@ pub async fn update_description(
     original_text: &str) 
     -> Result<(), sqlx::Error> 
 {
-    sqlx::query("UPDATE Descriptions SET original_text = $1 WHERE id = $2")
+    sqlx::query("UPDATE public.\"Descriptions\" SET original_text = $1 WHERE id = $2")
         .bind(original_text)
         .bind(description_id)
         .execute(pool)
@@ -47,7 +47,7 @@ pub async fn delete_description(
     description_id: i32) 
     -> Result<(), sqlx::Error> 
 {
-    sqlx::query("DELETE FROM Descriptions WHERE id = $1")
+    sqlx::query("DELETE FROM public.\"Descriptions\" WHERE id = $1")
         .bind(description_id)
         .execute(pool)
         .await?;
