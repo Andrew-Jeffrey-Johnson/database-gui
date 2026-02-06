@@ -10,6 +10,7 @@ pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     value: f32,
     description: String,
+    description2: String,
 }
 
 impl Default for TemplateApp {
@@ -19,6 +20,7 @@ impl Default for TemplateApp {
             label: "Hello World!".to_owned(),
             value: 2.7,
             description: String::from("Begin typing"),
+            description2: String::from("Begin typing"),
         }
     }
 }
@@ -91,19 +93,40 @@ impl eframe::App for TemplateApp {
                 my_database::create_description(&self.description);
                 println!("Created description");
             }
-            //let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
-            egui::ScrollArea::both()
-                .auto_shrink(false)
+            let horizontal_scroll: bool = false;
+            let vertical_scroll: bool = true;
+
+            egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
+                .id_source("First")
+                .auto_shrink(true)
+                .max_height(500.0)
                 .show(ui, |ui| {
                    ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description)
                         .code_editor()
                         //.layouter(&mut layouter)
                         .desired_rows(10)
                         .desired_width(f32::INFINITY)
-                        .frame(false)
+                        .frame(true)
+                    );
+                });
+            
+            ui.separator();
+
+            egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
+                .id_source("Second")
+                .auto_shrink(true)
+                .max_height(500.0)
+                .show(ui, |ui| {
+                   ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description2)
+                        .code_editor()
+                        //.layouter(&mut layouter)
+                        .desired_rows(10)
+                        .desired_width(f32::INFINITY)
+                        .frame(true)
                     );
                 });
 
+            //let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
             //if response.changed() {
             //    // …
             //}
