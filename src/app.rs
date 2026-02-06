@@ -69,6 +69,7 @@ impl eframe::App for TemplateApp {
             });
         });
 
+        // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.heading("eframe template");
@@ -90,7 +91,19 @@ impl eframe::App for TemplateApp {
                 my_database::create_description(&self.description);
                 println!("Created description");
             }
-            let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
+            //let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
+            egui::ScrollArea::both()
+                .auto_shrink(false)
+                .show(ui, |ui| {
+                   ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description)
+                        .code_editor()
+                        //.layouter(&mut layouter)
+                        .desired_rows(10)
+                        .desired_width(f32::INFINITY)
+                        .frame(false)
+                    );
+                });
+
             //if response.changed() {
             //    // …
             //}
