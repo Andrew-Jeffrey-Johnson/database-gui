@@ -97,7 +97,7 @@ impl eframe::App for TemplateApp {
             egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
                 .id_salt("First")
                 .auto_shrink(true)
-                .max_height(500.0)
+                .max_height(200.0)
                 .show(ui, |ui| {
                    ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description)
                         .code_editor()
@@ -110,18 +110,26 @@ impl eframe::App for TemplateApp {
             
             ui.separator();
 
+           // let lines = self.description.split('\n');
+           // for line in lines {
+           //     ui.horizontal(|ui| {
+           //         ui.spacing_mut().item_spacing.x = 0.0;
+           //         ui.label(line);
+           //     });
+           // }
+
             egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
                 .id_salt("Second")
                 .auto_shrink(true)
                 .max_height(500.0)
                 .show(ui, |ui| {
-                   ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description2)
-                        .code_editor()
-                        //.layouter(&mut layouter)
-                        .desired_rows(10)
-                        .desired_width(f32::INFINITY)
-                        .frame(true)
-                    );
+                    let lines = self.description.split('\n');
+                    for line in lines {
+                        ui.horizontal(|ui| {
+                            ui.spacing_mut().item_spacing.x = 0.0;
+                            ui.label(line);
+                        });
+                    }
                 });
 
             //let _response = ui.add_sized(ui.available_size(), egui::TextEdit::multiline(&mut self.description));
