@@ -89,9 +89,7 @@ impl eframe::App for TemplateApp {
             ui.separator();
 
             if ui.button("Send Description").clicked() {
-                println!("About to create description");
                 my_database::create_description(&self.description);
-                println!("Created description");
             }
             let horizontal_scroll: bool = false;
             let vertical_scroll: bool = true;
