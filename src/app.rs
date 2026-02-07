@@ -97,7 +97,7 @@ impl eframe::App for TemplateApp {
             let vertical_scroll: bool = true;
 
             egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
-                .id_source("First")
+                .id_salt("First")
                 .auto_shrink(true)
                 .max_height(500.0)
                 .show(ui, |ui| {
@@ -113,7 +113,7 @@ impl eframe::App for TemplateApp {
             ui.separator();
 
             egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
-                .id_source("Second")
+                .id_salt("Second")
                 .auto_shrink(true)
                 .max_height(500.0)
                 .show(ui, |ui| {
