@@ -175,12 +175,11 @@ fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
     });
 }
 //https://regex101.com/r/lf8r4y/1
-/* The regex expression to group every word separate from punctuation and newlines 
- * except spaces. Ignores case for the first group
-/(?i:Cascade Life Alliance|organ procurement organization)|(\n)|(\b\w+\b)|([•])|([^ ])/gm
- * without groups:
-/Cascade Life Alliance|organ procurement organization|\n|\b\w+\b|[•]|[^ ]/gmi
- */
+// The regex expression to group every word separate from punctuation and newlines 
+// except spaces. Ignores case for the first group
+//(?i:Cascade Life Alliance|organ procurement organization)|(\n)|(\b\w+\b)|([•])|([^ ])/gm
+// without groups:
+// /Cascade Life Alliance|organ procurement organization|\b\w+\b|[\n\r\v\f]|\S|[\t ]*/gmi
 fn annotate_description(original_description: &str) -> Vec<(String, Option<String>, TokenType)> {
     // Create dictionary
     let mut dictionary = std::collections::HashMap::new();
@@ -215,7 +214,7 @@ fn annotate_description(original_description: &str) -> Vec<(String, Option<Strin
     for key in itr {
         expr.push_str(format!("{key}|").as_str());
     }
-    expr.push_str(r"\n|\b\w+\b|[•]|[ ]/gmi");
+    expr.push_str(r"\b\w+\b|[\n\r\v\f]|\S|[\t ]*/gmi");
     // Compile regex
     let re = regex::Regex::new(expr.as_str()).unwrap();
     // Get all matches
