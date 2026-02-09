@@ -133,6 +133,7 @@ impl eframe::App for TemplateApp {
                 .max_height(500.0)
                 .show(ui, |ui| {
                     ui.horizontal_wrapped(|ui| {
+                        ui.spacing_mut().item_spacing.x = 0.0;
                         for (text, raw_tooltip, tt) in self.formatted_description.clone() {
                             if raw_tooltip.is_some() {
                                 let formatted_token = egui::RichText::new(&text);
