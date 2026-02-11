@@ -15,7 +15,7 @@ pub struct TemplateApp {
     value: f32,
     description: String,
     #[serde(skip)]
-    description_segments: Vec<String>,
+    description_segments: Vec<my_text::LabelPkg>,
 }
 
 impl Default for TemplateApp {
@@ -25,7 +25,7 @@ impl Default for TemplateApp {
             label: "Hello World!".to_owned(),
             value: 2.7,
             description: String::from("Begin typing"),
-            description_segments: Vec::<String>::new(),
+            description_segments: Vec::<my_text::LabelPkg>::new(),
         }
     }
 }
@@ -124,7 +124,7 @@ impl eframe::App for TemplateApp {
                 .max_height(500.0)
                 .show(ui, |ui| {
                     for seg in &self.description_segments {
-                        add_normal_label(ui, seg);
+                        add_normal_label(ui, &seg.text);
                     }
                 });
         });

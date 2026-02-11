@@ -1,25 +1,68 @@
 
-pub enum TokenType {
+pub enum TextCategory {
     Jargon,
     Acronym,
     Normal,
 }
 
-struct TokenContainer {
-    token: String,
-    raw_tooltip: Option<String>,
-    tt: TokenType
+pub struct LabelPkg {
+    pub text: String,
+    pub tooltip: Option<String>,
+    pub category: Option<TextCategory>,
+}
+/*
+fn get_acronyms(desc: &mut Vec<LabelPkg>) {
+    // Create map
+    let mut map = std::collections::HashMap::new();
+    map.insert(
+        "ITG".to_string(),
+        "Information Technology Group".to_string(),
+    );
+    map.insert(
+        "OHSU".to_string(),
+        "Oregon Health and Science University".to_string(),
+    );
+    map.insert(
+        "CLA".to_string(),
+        "Cascade Life Alliance".to_string(),
+    );
 }
 
-pub fn segment_description(desc: &str) -> Vec<String> {
+fn get_jargon() {
+    // Create map
+    let mut map = std::collections::HashMap::new();
+    map.insert(
+        "Information Technology Group".to_string(),
+        "ITG".to_string(),
+    );
+    map.insert(
+        "Oregon Health and Science University".to_string(),
+        "OHSU".to_string(),
+    );
+    map.insert(
+        "Cascade Life Alliance".to_string(),
+        "CLA".to_string(),
+    );
+}
+
+fn isolate_jargon(desc: &mut Vec<LabelPkg>) {
+    desc. 
+}
+*/
+pub fn segment_description(desc: &str) -> Vec<LabelPkg> {
     // Capture all lines that have content and trim leading/trailing whitespace
     let mut expr = String::from(r"(?:[\S]+[ \t]*)+");
     let re = regex::Regex::new(expr.as_str()).unwrap();
     let it = re.captures_iter(desc);
-    let mut segments: Vec<String> = Vec::<String>::new();
+    let mut segments: Vec<LabelPkg> = Vec::<LabelPkg>::new();
     for cap in it {
         let seg: String = cap[0].to_string();
-        segments.push(seg);
+        let pkg: LabelPkg = LabelPkg {
+            text: seg,
+            tooltip: None,
+            category: None,
+        };
+        segments.push(pkg);
     }
     return segments;
 }
