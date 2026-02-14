@@ -15,7 +15,7 @@ pub struct TemplateApp {
     value: f32,
     description: String,
     #[serde(skip)]
-    description_segments: Vec<my_text::LabelPkg>,
+    description_segments: Vec<Vec<my_text::LabelPkg>>,
 }
 
 impl Default for TemplateApp {
@@ -25,7 +25,7 @@ impl Default for TemplateApp {
             label: "Hello World!".to_owned(),
             value: 2.7,
             description: String::from("Begin typing"),
-            description_segments: Vec::<my_text::LabelPkg>::new(),
+            description_segments: Vec::<Vec<my_text::LabelPkg>>::new(),
         }
     }
 }
@@ -123,8 +123,20 @@ impl eframe::App for TemplateApp {
                 .auto_shrink(true)
                 .max_height(500.0)
                 .show(ui, |ui| {
+                    let error: String = String::from("ERROR: No Tooltip Found");
                     for seg in &self.description_segments {
-                        add_normal_label(ui, &seg.text);
+                        ui.horizontal_wrapped(|ui| {
+                            for cap in seg {
+                                match &cap.category {
+                                    my_text::TextCategory::Jargon => 
+                                        add_jargon_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
+                                    my_text::TextCategory::Acronym => 
+                                        add_acronym_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
+                                    my_text::TextCategory::Normal => 
+                                        add_normal_label(ui, &cap.text)
+                                }
+                            }
+                        });
                     }
                 });
         });
