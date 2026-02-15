@@ -8,23 +8,17 @@ mod my_text;
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
-    label: String,
-
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
     description: String,
-    #[serde(skip)]
+    summary: String,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     description_segments: Vec<Vec<my_text::LabelPkg>>,
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
             description: String::from("Begin typing"),
+            summary: String::from("Begin typing"),
             description_segments: Vec::<Vec<my_text::LabelPkg>>::new(),
         }
     }
@@ -79,71 +73,34 @@ impl eframe::App for TemplateApp {
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
-            ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
-            });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
-            ui.separator();
-
-            if ui.button("Send Description").clicked() {
-                my_database::create_description(&self.description);
-            }
-            let horizontal_scroll: bool = false;
-            let vertical_scroll: bool = true;
-
-            egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
-                .id_salt("First")
-                .auto_shrink(true)
-                .max_height(200.0)
-                .show(ui, |ui| {
-                   ui.add_enabled(true, egui::TextEdit::multiline(&mut self.description)
-                        .code_editor()
-                        //.layouter(&mut layouter)
-                        .desired_rows(10)
-                        .desired_width(f32::INFINITY)
-                        .frame(true)
-                    );
-                });
-            
-            ui.separator();
-
-            if ui.button("Segment Description").clicked() {
-                self.description_segments = my_text::segment_description(&self.description);
-            }
-            egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
-                .id_salt("Second")
-                .auto_shrink(true)
-                .max_height(500.0)
-                .show(ui, |ui| {
-                    let error: String = String::from("ERROR: No Tooltip Found");
-                    for seg in &self.description_segments {
-                        ui.horizontal_wrapped(|ui| {
-                            let width = ui.fonts_mut(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
-                            ui.spacing_mut().item_spacing.x = width;
-                            //ui.spacing_mut().item_spacing.y = 0.0;
-                            for cap in seg {
-                                match &cap.category {
-                                    my_text::TextCategory::Jargon => 
-                                        add_jargon_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
-                                    my_text::TextCategory::Acronym => 
-                                        add_acronym_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
-                                    my_text::TextCategory::Normal => 
-                                        add_normal_label(ui, &cap.text)
-                                }
-                            }
-                        });
+            ui.columns_const(|[col_1, col_2]| {
+                col_1.vertical(|col_1| {
+                    col_1.label("Description");
+                    if col_1.button("Send Description").clicked() {
+                        my_database::create_description(&self.description);
                     }
+                    add_original_description(col_1, &mut self.description);
+                    col_1.separator();
+                    if col_1.button("Segment Description").clicked() {
+                        self.description_segments = my_text::segment_description(&self.description);
+                    }
+                    add_annotated_description(col_1, &self.description_segments);
                 });
+                col_2.vertical(|col_2| {
+                    col_2.label("Resume");
+                    add_summary(col_2, &mut self.summary)
+                });
+            });
         });
     }
+}
+
+fn add_summary(ui: &mut egui::Ui, summary: &mut String) {
+    ui.label("Summary");
+    ui.add_enabled(true, egui::TextEdit::multiline(summary)
+        .desired_rows(10)
+        .desired_width(f32::INFINITY)
+    );
 }
 
 fn add_acronym_label(ui: &mut egui::Ui, acronym: &String, tooltip: &String) {
@@ -154,4 +111,48 @@ fn add_jargon_label(ui: &mut egui::Ui, jargon: &String, tooltip: &String) {
 }
 fn add_normal_label(ui: &mut egui::Ui, text: &String) {
     ui.label(egui::RichText::new(text));
+}
+
+fn add_original_description(ui: &mut egui::Ui, description: &mut String) {
+    let horizontal_scroll: bool = false;
+    let vertical_scroll: bool = true;
+    egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
+        .id_salt("Original")
+        .auto_shrink(true)
+        .max_height(200.0)
+        .show(ui, |ui| {
+           ui.add_enabled(true, egui::TextEdit::multiline(description)
+                .desired_rows(10)
+                .frame(true)
+                .desired_width(f32::INFINITY)
+            );
+        });
+}
+
+fn add_annotated_description(ui: &mut egui::Ui, description_segments: &Vec<Vec<my_text::LabelPkg>>) {
+    let horizontal_scroll: bool = false;
+    let vertical_scroll: bool = true;
+    egui::ScrollArea::new([horizontal_scroll,vertical_scroll])
+        .id_salt("Annotated")
+        .auto_shrink(true)
+        .max_height(500.0)
+        .show(ui, |ui| {
+            let error: String = String::from("ERROR: No Tooltip Found");
+            for seg in description_segments {
+                ui.horizontal_wrapped(|ui| {
+                    let width = ui.fonts_mut(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
+                    ui.spacing_mut().item_spacing.x = width;
+                    for cap in seg {
+                        match &cap.category {
+                            my_text::TextCategory::Jargon => 
+                                add_jargon_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
+                            my_text::TextCategory::Acronym => 
+                                add_acronym_label(ui, &cap.text, &cap.tooltip.as_ref().unwrap_or_else(|| &error)),
+                            my_text::TextCategory::Normal => 
+                                add_normal_label(ui, &cap.text)
+                        }
+                    }
+                });
+            }
+        });
 }
