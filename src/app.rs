@@ -126,6 +126,9 @@ impl eframe::App for TemplateApp {
                     let error: String = String::from("ERROR: No Tooltip Found");
                     for seg in &self.description_segments {
                         ui.horizontal_wrapped(|ui| {
+                            let width = ui.fonts_mut(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
+                            ui.spacing_mut().item_spacing.x = width;
+                            //ui.spacing_mut().item_spacing.y = 0.0;
                             for cap in seg {
                                 match &cap.category {
                                     my_text::TextCategory::Jargon => 

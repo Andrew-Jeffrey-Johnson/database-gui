@@ -52,7 +52,8 @@ fn get_jargon() -> std::collections::HashMap<String, String> {
 // https://regex101.com
 pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     // Assemble regex expression
-    let all_else: String = String::from(r"[\s\S]+?");
+    let newlines: String = String::from(r"\n+");
+    let all_other_visible: String = String::from(r"\S");
     let words: String = String::from(r"[\w’'-]+");
     let email_addresses: String = String::from(r"[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+");
     let mut phrases: String = String::from(r"\b(?:");
@@ -69,7 +70,7 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     phrases.pop(); // Remove last |
     phrases.push_str(r")\b");
     // Put it all together
-    let expr = String::from(format!("(?im){phrases}|{email_addresses}|{words}|{all_else}"));
+    let expr = String::from(format!("(?im){phrases}|{email_addresses}|{words}|{all_other_visible}|{newlines}"));
     // Compile regex
     let re = regex::Regex::new(expr.as_str()).unwrap();
     // Label all captures
@@ -78,11 +79,11 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     let mut segments: Vec<Vec<LabelPkg>> = Vec::<Vec<LabelPkg>>::new();
     for cap in it {
         let text: String = cap[0].to_string();
-        println!("{}", text);
-        if text == String::from("\n") {
-            segments.push(captures.clone());
+        // Each segment is a line that has text
+        if text.contains("\n") {
+            segments.push(captures);
             captures = Vec::<LabelPkg>::new();
-            println!("Pushed another line");
+            continue;
         }
         let tooltip: Option<String> = match (jargon.get(&text), acronyms.get(&text)) {
             (Some(j), None) => Some(j.to_string()),
