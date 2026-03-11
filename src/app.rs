@@ -88,16 +88,19 @@ impl eframe::App for TemplateApp {
                 });
                 col_2.vertical(|col_2| {
                     col_2.label("Resume");
-                    add_summary(col_2, &mut self.summary)
+                   // if col_2.button("Get Application").clicked() {
+                   //     self.application = my_text::get_application();
+                   // }
+                    //add_application(col_2, &mut self.application)
                 });
             });
         });
     }
 }
 
-fn add_summary(ui: &mut egui::Ui, summary: &mut String) {
+fn add_application(ui: &mut egui::Ui, application: &mut String) {
     ui.label("Summary");
-    ui.add_enabled(true, egui::TextEdit::multiline(summary)
+    ui.add_enabled(true, egui::TextEdit::multiline(application)
         .desired_rows(10)
         .desired_width(f32::INFINITY)
     );
@@ -123,7 +126,6 @@ fn add_original_description(ui: &mut egui::Ui, description: &mut String) {
         .show(ui, |ui| {
            ui.add_enabled(true, egui::TextEdit::multiline(description)
                 .desired_rows(10)
-                .frame(true)
                 .desired_width(f32::INFINITY)
             );
         });
@@ -140,6 +142,7 @@ fn add_annotated_description(ui: &mut egui::Ui, description_segments: &Vec<Vec<m
             let error: String = String::from("ERROR: No Tooltip Found");
             for seg in description_segments {
                 ui.horizontal_wrapped(|ui| {
+                    // Trick to add spaces
                     let width = ui.fonts_mut(|f|f.glyph_width(&egui::TextStyle::Body.resolve(ui.style()), ' '));
                     ui.spacing_mut().item_spacing.x = width;
                     for cap in seg {

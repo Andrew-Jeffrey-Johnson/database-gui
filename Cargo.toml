@@ -29,6 +29,8 @@ sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "runtime-to
 dotenv = "0.15"
 # Regex
 regex = "1.12.3"
+# Date and time
+chrono = "0.4.43"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

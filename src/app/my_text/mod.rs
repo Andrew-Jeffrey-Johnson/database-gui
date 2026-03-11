@@ -1,17 +1,46 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
     Jargon,
     Acronym,
     Normal,
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct LabelPkg {
     pub text: String,
     pub tooltip: Option<String>,
     pub category: TextCategory,
 }
+#[derive(Clone)]
+pub struct PostalAddress {
+    pub address1: String,
+    pub address2: String,
+    pub address3: String,
+    pub city: String,
+    pub state: String,
+    pub zip: String,
+}
+#[derive(Clone)]
+pub struct Company {
 
-fn get_acronyms() -> std::collections::HashMap<String, String> {
+}
+#[derive(Clone)]
+pub struct Experience {
+    pub id: i32,
+    pub start: chrono::DateTime<chrono::Local>,
+    pub end: chrono::DateTime<chrono::Local>,
+    pub company: String,
+    pub address: PostalAddress,
+    pub Accomplishments: Vec<String>,
+}
+#[derive(Clone)]
+pub struct Application {
+    pub id: i32,
+    pub experiences: Vec<Experience>,
+
+    pub category: TextCategory,
+}
+
+pub fn get_acronyms() -> std::collections::HashMap<String, String> {
     // Create map
     let mut map: std::collections::HashMap<String, String> = std::collections::HashMap::<String, String>::new();
     map.insert(
@@ -29,7 +58,7 @@ fn get_acronyms() -> std::collections::HashMap<String, String> {
     return map;
 }
 
-fn get_jargon() -> std::collections::HashMap<String, String> {
+pub fn get_jargon() -> std::collections::HashMap<String, String> {
     // Create map
     let mut map: std::collections::HashMap<String, String> = std::collections::HashMap::<String, String>::new();
     map.insert(
@@ -47,10 +76,12 @@ fn get_jargon() -> std::collections::HashMap<String, String> {
     return map;
 }
 
-// Segment description into phrases, words, punctuation, formatting, and whitespace
-// "\b(?:CLA|ORGAN PROCUREMENT ORGANIZATION)\b|[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+|[\w’]+|[\s\S]+?"gmi
-// https://regex101.com
-pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
+// concatenate strings into a single regex expression
+// Website used to help create this expression: https://regex101.com
+fn assemble_regex_expression (
+    jargon: &std::collections::HashMap<String, String>, 
+    acronyms: &std::collections::HashMap<String, String>
+    ) -> String {
     // Assemble regex expression
     let newlines: String = String::from(r"\n+");
     let all_other_visible: String = String::from(r"\S");
@@ -58,20 +89,50 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     let email_addresses: String = String::from(r"[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+");
     let mut phrases: String = String::from(r"\b(?:");
     // Add all jargon 
-    let jargon = get_jargon();
-    for (key, value) in &jargon {
+    for (key, value) in jargon {
         phrases.push_str(format!("{key}|").as_str());
     }
     // Add all acronyms 
-    let acronyms = get_acronyms();
-    for (key, value) in &acronyms {
+    for (key, value) in acronyms {
         phrases.push_str(format!("{key}|").as_str());
     }
     phrases.pop(); // Remove last |
     phrases.push_str(r")\b");
     // Put it all together
     let expr = String::from(format!("(?im){phrases}|{email_addresses}|{words}|{all_other_visible}|{newlines}"));
+    return expr;
+}
+
+// For each capture, label it
+pub fn label_capture(
+    text: String,
+    jargon: &std::collections::HashMap<String, String>, 
+    acronyms: &std::collections::HashMap<String, String> 
+    ) -> LabelPkg {
+    let tooltip: Option<String> = match (jargon.get(&text), acronyms.get(&text)) {
+        (Some(j), None) => Some(j.to_string()),
+        (None, Some(a)) => Some(a.to_string()),
+        _ => None
+    };
+    let category: TextCategory = match (jargon.contains_key(&text), acronyms.contains_key(&text)) {
+        (true, false) => TextCategory::Jargon,
+        (false, true) => TextCategory::Acronym,
+        _ => TextCategory::Normal
+    };
+    let pkg: LabelPkg = LabelPkg {
+        text: text,
+        tooltip: tooltip,
+        category: category,
+    };
+    return pkg;
+}
+
+// Segment description into phrases, words, punctuation, formatting, and whitespace
+pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     // Compile regex
+    let jargon = get_jargon();
+    let acronyms = get_acronyms();
+    let expr = assemble_regex_expression(&jargon, &acronyms);
     let re = regex::Regex::new(expr.as_str()).unwrap();
     // Label all captures
     let it = re.captures_iter(desc);
@@ -85,24 +146,12 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
             captures = Vec::<LabelPkg>::new();
             continue;
         }
-        let tooltip: Option<String> = match (jargon.get(&text), acronyms.get(&text)) {
-            (Some(j), None) => Some(j.to_string()),
-            (None, Some(a)) => Some(a.to_string()),
-            _ => None
-        };
-        let category: TextCategory = match (jargon.contains_key(&text), acronyms.contains_key(&text)) {
-            (true, false) => TextCategory::Jargon,
-            (false, true) => TextCategory::Acronym,
-            _ => TextCategory::Normal
-        };
-        let pkg: LabelPkg = LabelPkg {
-            text: text,
-            tooltip: tooltip,
-            category: category,
-        };
+        let pkg: LabelPkg = label_capture(text, &jargon, &acronyms);
         captures.push(pkg);
     }
     return segments;
 }
 
-
+//fn get_application() -> Application {
+//    return 
+//}

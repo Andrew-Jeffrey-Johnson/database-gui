@@ -100,6 +100,6 @@
       devShells.msrv = mkDevShell pkgs.rust-bin.stable.${msrv}.default;
 
       # TODO: Have nix run run stable program
-      packages.x86_64-linux.default = self.pkgs.hello;
+      packages.x86_64-linux.default = pkgs.hello;
     };
 }
