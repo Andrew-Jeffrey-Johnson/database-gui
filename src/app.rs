@@ -12,6 +12,8 @@ pub struct TemplateApp {
     summary: String,
     #[serde(skip)] // This how you opt-out of serialization of a field
     description_segments: Vec<Vec<my_text::LabelPkg>>,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    achievements: Vec<my_text::Achievement>,
 }
 
 impl Default for TemplateApp {
@@ -20,6 +22,7 @@ impl Default for TemplateApp {
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
             description_segments: Vec::<Vec<my_text::LabelPkg>>::new(),
+            achievements: Vec::<my_text::Achievement>::new(),
         }
     }
 }
@@ -88,6 +91,12 @@ impl eframe::App for TemplateApp {
                 });
                 col_2.vertical(|col_2| {
                     col_2.label("Resume");
+                    if col_2.button("Get Achievements").clicked() {
+                        self.achievements = my_text::get_achievements();
+                    }
+                    for a in &mut self.achievements {
+                        col_2.checkbox(&mut a.in_resume, &a.description);
+                    }
                    // if col_2.button("Get Application").clicked() {
                    //     self.application = my_text::get_application();
                    // }

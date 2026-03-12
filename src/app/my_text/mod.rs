@@ -10,7 +10,7 @@ pub struct LabelPkg {
     pub tooltip: Option<String>,
     pub category: TextCategory,
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct PostalAddress {
     pub address1: String,
     pub address2: String,
@@ -19,25 +19,47 @@ pub struct PostalAddress {
     pub state: String,
     pub zip: String,
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Company {
 
 }
-#[derive(Clone)]
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Achievement {
+    pub id: i32,
+    pub description: String,
+    pub in_resume: bool,
+}
+
+#[derive(Clone, PartialEq, Debug)]
 pub struct Experience {
     pub id: i32,
     pub start: chrono::DateTime<chrono::Local>,
     pub end: chrono::DateTime<chrono::Local>,
     pub company: String,
     pub address: PostalAddress,
-    pub Accomplishments: Vec<String>,
+    pub Accomplishments: Vec<Achievement>,
 }
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Application {
     pub id: i32,
     pub experiences: Vec<Experience>,
 
     pub category: TextCategory,
+}
+
+pub fn get_achievements() -> Vec<Achievement> {
+    let mut achievements: Vec<Achievement> = Vec::<Achievement>::new();
+    for i in 0..30 {
+        let text: String = format!("Achievement {}", i);
+        let achievement: Achievement = Achievement {
+            id: i,
+            description: text,
+            in_resume: false,
+        };
+        achievements.push(achievement);
+    }
+    return achievements;
 }
 
 pub fn get_acronyms() -> std::collections::HashMap<String, String> {
