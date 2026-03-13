@@ -1,3 +1,6 @@
+use chrono::offset::TimeZone;
+use chrono::offset::Utc;
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
     Jargon,
@@ -12,6 +15,7 @@ pub struct LabelPkg {
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct PostalAddress {
+    pub name: String,
     pub address1: String,
     pub address2: String,
     pub address3: String,
@@ -34,11 +38,11 @@ pub struct Achievement {
 #[derive(Clone, PartialEq, Debug)]
 pub struct Experience {
     pub id: i32,
-    pub start: chrono::DateTime<chrono::Local>,
-    pub end: chrono::DateTime<chrono::Local>,
+    pub start: chrono::DateTime<chrono::offset::Utc>,
+    pub end: chrono::DateTime<chrono::offset::Utc>,
     pub company: String,
     pub address: PostalAddress,
-    pub Accomplishments: Vec<Achievement>,
+    pub achievements: Vec<Achievement>,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Application {
@@ -60,6 +64,28 @@ pub fn get_achievements() -> Vec<Achievement> {
         achievements.push(achievement);
     }
     return achievements;
+}
+
+pub fn get_experiences() -> Vec<Experience> {
+    let mut experiences: Vec<Experience> = Vec::<Experience>::new();
+    let intel = Experience {
+        id: 0,
+        start: Utc.with_ymd_and_hms(2024, 6, 24, 19, 0, 0).unwrap(),
+        end: Utc.with_ymd_and_hms(2024, 11, 15, 23, 0, 0).unwrap(),
+        company: String::from("Intel"),
+        address: PostalAddress {
+            name: String::from("Jones Farm Campus"),
+            address1: String::from("2111 NE 25th Avenue"),
+            address2: String::from(""),
+            address3: String::from(""),
+            city: String::from("Hillsboro"),
+            state: String::from("OR"),
+            zip: String::from("97124"),
+        },
+        achievements: get_achievements(),
+    };
+    experiences.push(intel);
+    return experiences;
 }
 
 pub fn get_acronyms() -> std::collections::HashMap<String, String> {

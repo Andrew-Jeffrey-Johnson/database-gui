@@ -13,7 +13,7 @@ pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     description_segments: Vec<Vec<my_text::LabelPkg>>,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    achievements: Vec<my_text::Achievement>,
+    experiences: Vec<my_text::Experience>,
 }
 
 impl Default for TemplateApp {
@@ -22,7 +22,7 @@ impl Default for TemplateApp {
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
             description_segments: Vec::<Vec<my_text::LabelPkg>>::new(),
-            achievements: Vec::<my_text::Achievement>::new(),
+            experiences: Vec::<my_text::Experience>::new(),
         }
     }
 }
@@ -91,11 +91,17 @@ impl eframe::App for TemplateApp {
                 });
                 col_2.vertical(|col_2| {
                     col_2.label("Resume");
-                    if col_2.button("Get Achievements").clicked() {
-                        self.achievements = my_text::get_achievements();
+                    if col_2.button("Get Experiences").clicked() {
+                        self.experiences = my_text::get_experiences();
                     }
-                    for a in &mut self.achievements {
-                        col_2.checkbox(&mut a.in_resume, &a.description);
+                    for e in &mut self.experiences {
+                        col_2.label(&e.company);
+                        col_2.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
+                        col_2.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
+                        col_2.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+                        for a in &mut e.achievements {
+                            col_2.checkbox(&mut a.in_resume, &a.description);
+                        }
                     }
                    // if col_2.button("Get Application").clicked() {
                    //     self.application = my_text::get_application();
