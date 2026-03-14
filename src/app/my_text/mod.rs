@@ -29,10 +29,19 @@ pub struct Company {
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Achievement {
+pub struct AchievementVariant {
     pub id: i32,
     pub description: String,
     pub in_resume: bool,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Achievement {
+    pub id: i32,
+    pub short_description: String,
+    pub variants: Vec<AchievementVariant>,
+    pub in_resume: bool,
+    pub selected_variant: i32,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -54,12 +63,24 @@ pub struct Application {
 
 pub fn get_achievements() -> Vec<Achievement> {
     let mut achievements: Vec<Achievement> = Vec::<Achievement>::new();
-    for i in 0..30 {
+    for i in 0..10 {
         let text: String = format!("Achievement {}", i);
+        let mut variants: Vec<AchievementVariant> = Vec::<AchievementVariant>::new();
+        for j in 0..3 {
+            let desc: String = format!("Achievement {}, {}", i, j);
+            let variant: AchievementVariant = AchievementVariant {
+                id: j,
+                description: desc,
+                in_resume: false,
+            };
+            variants.push(variant)
+        }
         let achievement: Achievement = Achievement {
             id: i,
-            description: text,
+            short_description: text,
+            variants: variants,
             in_resume: false,
+            selected_variant: 0,
         };
         achievements.push(achievement);
     }
@@ -84,7 +105,24 @@ pub fn get_experiences() -> Vec<Experience> {
         },
         achievements: get_achievements(),
     };
+    let billiard_shop = Experience {
+        id: 1,
+        start: Utc.with_ymd_and_hms(2023, 9, 21, 19, 0, 0).unwrap(),
+        end: Utc.with_ymd_and_hms(2024, 6, 8, 23, 0, 0).unwrap(),
+        company: String::from("The Billiard Shop"),
+        address: PostalAddress {
+            name: String::from("The Billiard Shop"),
+            address1: String::from("5627 SW Arctic Dr"),
+            address2: String::from(""),
+            address3: String::from(""),
+            city: String::from("Beaverton"),
+            state: String::from("OR"),
+            zip: String::from("97005"),
+        },
+        achievements: get_achievements(),
+    };
     experiences.push(intel);
+    experiences.push(billiard_shop);
     return experiences;
 }
 

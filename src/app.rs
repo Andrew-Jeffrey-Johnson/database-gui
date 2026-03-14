@@ -95,13 +95,7 @@ impl eframe::App for TemplateApp {
                         self.experiences = my_text::get_experiences();
                     }
                     for e in &mut self.experiences {
-                        col_2.label(&e.company);
-                        col_2.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
-                        col_2.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
-                        col_2.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
-                        for a in &mut e.achievements {
-                            col_2.checkbox(&mut a.in_resume, &a.description);
-                        }
+                        add_experience(col_2, e);
                     }
                    // if col_2.button("Get Application").clicked() {
                    //     self.application = my_text::get_application();
@@ -110,6 +104,25 @@ impl eframe::App for TemplateApp {
                 });
             });
         });
+    }
+}
+
+fn add_experience(ui: &mut egui::Ui, e: &mut my_text::Experience) {
+    ui.label(&e.company);
+    ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
+    ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
+    ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+    for a in &mut e.achievements {
+        let id = ui.next_auto_id().with(&a.short_description);
+        egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false)
+            .show_header(ui, |ui| {
+                ui.checkbox(&mut a.in_resume, &a.short_description);
+            })
+            .body(|ui| {
+                for v in &mut a.variants {
+                    ui.radio_value(&mut a.selected_variant, v.id, &v.description);
+                }
+            });
     }
 }
 
