@@ -108,22 +108,28 @@ impl eframe::App for TemplateApp {
 }
 
 fn add_experience(ui: &mut egui::Ui, e: &mut my_text::Experience) {
-    ui.label(&e.company);
-    ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
-    ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
-    ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
-    for a in &mut e.achievements {
-        let id = ui.next_auto_id().with(&a.short_description);
-        egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false)
-            .show_header(ui, |ui| {
-                ui.checkbox(&mut a.in_resume, &a.short_description);
-            })
-            .body(|ui| {
+    ui.scope(|ui| {
+        ui.style_mut().interaction.tooltip_delay = 0.0;
+        ui.style_mut().interaction.show_tooltips_only_when_still = false;
+        ui.label(&e.company).on_hover_text("Please work");
+        ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
+        ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
+        ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        for a in &mut e.achievements {
+            let id = ui.next_auto_id().with(format!("{}{}", &a.short_description, &e.company));
+            let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
+            state.set_open(a.in_resume);
+            state.show_header(ui, |ui| {
+                ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
+                    ui.label(&a.defense);
+                });
+            }).body(|ui| {
                 for v in &mut a.variants {
-                    ui.radio_value(&mut a.selected_variant, v.id, &v.description);
+                    ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
                 }
             });
-    }
+        }
+    });
 }
 
 fn add_application(ui: &mut egui::Ui, application: &mut String) {

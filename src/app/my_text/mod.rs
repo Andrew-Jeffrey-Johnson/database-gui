@@ -32,6 +32,7 @@ pub struct Company {
 pub struct AchievementVariant {
     pub id: i32,
     pub description: String,
+    pub defense: String,
     pub in_resume: bool,
 }
 
@@ -39,6 +40,7 @@ pub struct AchievementVariant {
 pub struct Achievement {
     pub id: i32,
     pub short_description: String,
+    pub defense: String,
     pub variants: Vec<AchievementVariant>,
     pub in_resume: bool,
     pub selected_variant: i32,
@@ -71,6 +73,7 @@ pub fn get_achievements() -> Vec<Achievement> {
             let variant: AchievementVariant = AchievementVariant {
                 id: j,
                 description: desc,
+                defense: String::from("This = that"),
                 in_resume: false,
             };
             variants.push(variant)
@@ -78,6 +81,7 @@ pub fn get_achievements() -> Vec<Achievement> {
         let achievement: Achievement = Achievement {
             id: i,
             short_description: text,
+            defense: String::from("I did this."),
             variants: variants,
             in_resume: false,
             selected_variant: 0,
