@@ -76,7 +76,7 @@ impl eframe::App for TemplateApp {
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.columns_const(|[col_1, col_2]| {
+            ui.columns_const(|[col_1, col_2, col_3]| {
                 col_1.vertical(|col_1| {
                     col_1.label("Description");
                     if col_1.button("Send Description").clicked() {
@@ -97,21 +97,38 @@ impl eframe::App for TemplateApp {
                     for e in &mut self.experiences {
                         add_experience(col_2, e);
                     }
-                   // if col_2.button("Get Application").clicked() {
-                   //     self.application = my_text::get_application();
-                   // }
-                    //add_application(col_2, &mut self.application)
+                });
+                col_3.vertical(|col_3| {
+                    for e in &mut self.experiences {
+                        show_resume_content(col_3, e);    
+                    }
                 });
             });
         });
     }
 }
 
+fn show_resume_content(ui: &mut egui::Ui, e: &mut my_text::Experience) {
+    ui.scope(|ui| {
+        ui.label(&e.company);
+        ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
+        ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
+        ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        for a in &mut e.achievements {
+            for v in &mut a.variants {
+                if a.in_resume && v.id == a.selected_variant {
+                    ui.label(&v.description);
+                }
+            }
+        }
+    });
+}
+
 fn add_experience(ui: &mut egui::Ui, e: &mut my_text::Experience) {
     ui.scope(|ui| {
         ui.style_mut().interaction.tooltip_delay = 0.0;
         ui.style_mut().interaction.show_tooltips_only_when_still = false;
-        ui.label(&e.company).on_hover_text("Please work");
+        ui.label(&e.company);
         ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
         ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
         ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
