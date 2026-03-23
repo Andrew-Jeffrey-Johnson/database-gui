@@ -100,7 +100,7 @@ impl eframe::App for TemplateApp {
                 });
                 col_3.vertical(|col_3| {
                     for e in &mut self.experiences {
-                        show_resume_content(col_3, e);    
+                        show_resume_content(col_3, e);
                     }
                 });
             });
@@ -109,11 +109,25 @@ impl eframe::App for TemplateApp {
 }
 
 fn show_resume_content(ui: &mut egui::Ui, e: &mut my_text::Experience) {
+    // if we didn't select any achievements from this experience, do nothing
+    let mut any_selected: bool = false;
+    for a in &mut e.achievements {
+        if a.in_resume {
+            any_selected = true;
+            break;
+        }
+    }
+    if !any_selected {
+        return;
+    }
     ui.scope(|ui| {
+        ui.style_mut().override_text_style = Some(egui::style::TextStyle::Heading);
         ui.label(&e.company);
-        ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
-        ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
-        ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        ui.style_mut().override_text_style = Some(egui::style::TextStyle::Body);
+        ui.label(format!("{}, {}", e.address.city, e.address.state));
+        let start = e.start.format("%B %Y").to_string();
+        let end = e.end.format("%B %Y").to_string();
+        ui.label(format!("{} - {}", start, end));
         for a in &mut e.achievements {
             for v in &mut a.variants {
                 if a.in_resume && v.id == a.selected_variant {
@@ -124,28 +138,50 @@ fn show_resume_content(ui: &mut egui::Ui, e: &mut my_text::Experience) {
     });
 }
 
+fn add_achievement(ui: &mut egui::Ui, a: &mut my_text::Achievement) {
+    let id = ui.next_auto_id().with(format!("{}", &a.short_description));
+    let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
+    state.set_open(a.in_resume);
+    state.show_header(ui, |ui| {
+        ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
+            ui.label(&a.defense);
+        });
+    }).body(|ui| {
+        for v in &mut a.variants {
+            ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
+        }
+    });
+}
+
+fn add_new_achievement(ui: &mut egui::Ui, a: &mut my_text::Achievement) {
+    let id = ui.next_auto_id().with(format!("{}", &a.short_description));
+    let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
+    state.set_open(a.in_resume);
+    state.show_header(ui, |ui| {
+        ui.add(egui::Checkbox::without_text(&mut a.in_resume));
+        ui.text_edit_singleline(&mut a.short_description).on_hover_ui(|ui| {
+            ui.label(&a.defense);
+        });
+    }).body(|ui| {
+        for v in &mut a.variants {
+            ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
+        }
+    });
+}
+
 fn add_experience(ui: &mut egui::Ui, e: &mut my_text::Experience) {
     ui.scope(|ui| {
         ui.style_mut().interaction.tooltip_delay = 0.0;
         ui.style_mut().interaction.show_tooltips_only_when_still = false;
         ui.label(&e.company);
-        ui.label(format!("{}, {}, {} {}", e.address.address1, e.address.city, e.address.state, e.address.zip));
-        ui.label(e.start.format("%Y-%m-%d %H:%M:%S").to_string());
-        ui.label(e.end.format("%Y-%m-%d %H:%M:%S").to_string());
+        ui.label(format!("{}, {}", e.address.city, e.address.state));
+        let start = e.start.format("%B %Y").to_string();
+        let end = e.end.format("%B %Y").to_string();
+        ui.label(format!("{} - {}", start, end));
         for a in &mut e.achievements {
-            let id = ui.next_auto_id().with(format!("{}{}", &a.short_description, &e.company));
-            let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
-            state.set_open(a.in_resume);
-            state.show_header(ui, |ui| {
-                ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
-                    ui.label(&a.defense);
-                });
-            }).body(|ui| {
-                for v in &mut a.variants {
-                    ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
-                }
-            });
+            add_achievement(ui, a);
         }
+        add_new_achievement(ui, &mut e.new_achievement);
     });
 }
 

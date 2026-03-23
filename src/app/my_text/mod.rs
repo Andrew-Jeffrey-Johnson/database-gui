@@ -54,6 +54,7 @@ pub struct Experience {
     pub company: String,
     pub address: PostalAddress,
     pub achievements: Vec<Achievement>,
+    pub new_achievement: Achievement,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Application {
@@ -93,6 +94,8 @@ pub fn get_achievements() -> Vec<Achievement> {
 
 pub fn get_experiences() -> Vec<Experience> {
     let mut experiences: Vec<Experience> = Vec::<Experience>::new();
+    let intel_achievements = get_achievements();
+    let intel_len = intel_achievements.len() as i32;
     let intel = Experience {
         id: 0,
         start: Utc.with_ymd_and_hms(2024, 6, 24, 19, 0, 0).unwrap(),
@@ -108,7 +111,17 @@ pub fn get_experiences() -> Vec<Experience> {
             zip: String::from("97124"),
         },
         achievements: get_achievements(),
+        new_achievement: Achievement {
+            id: intel_len,
+            short_description: String::from(""),
+            defense: String::from(""),
+            variants: Vec::<AchievementVariant>::new(),
+            in_resume: false,
+            selected_variant: 0,
+        },
     };
+    let billiard_shop_achievements = get_achievements();
+    let billiard_shop_len = billiard_shop_achievements.len() as i32;
     let billiard_shop = Experience {
         id: 1,
         start: Utc.with_ymd_and_hms(2023, 9, 21, 19, 0, 0).unwrap(),
@@ -123,7 +136,15 @@ pub fn get_experiences() -> Vec<Experience> {
             state: String::from("OR"),
             zip: String::from("97005"),
         },
-        achievements: get_achievements(),
+        achievements: billiard_shop_achievements,
+        new_achievement: Achievement {
+            id: billiard_shop_len,
+            short_description: String::from(""),
+            defense: String::from(""),
+            variants: Vec::<AchievementVariant>::new(),
+            in_resume: false,
+            selected_variant: 0,
+        },
     };
     experiences.push(intel);
     experiences.push(billiard_shop);
@@ -242,6 +263,3 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
     return segments;
 }
 
-//fn get_application() -> Application {
-//    return 
-//}
