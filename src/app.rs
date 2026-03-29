@@ -26,6 +26,8 @@ pub struct TemplateApp {
     experiences: Vec<my_text::Experience>,
     #[serde(skip)] // This how you opt-out of serialization of a field
     new_achievement: my_text::Achievement,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    new_achievement_variant: my_text::AchievementVariant,
     description: String,
     summary: String,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -50,6 +52,11 @@ impl Default for TemplateApp {
                 }],
                 in_resume: false,
                 selected_variant: 0,
+            },
+            new_achievement_variant: my_text::AchievementVariant {
+                id: 0,
+                description: String::from(""),
+                defense: String::from(""),
             },
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
@@ -200,7 +207,41 @@ impl TemplateApp {
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Adding Achivement Variant");
-            self.add_achievement(ui, self.current_experience, self.current_achievement);
+            // Show experience as heading
+            let e = &mut self.experiences[self.current_experience];
+            ui.style_mut().override_text_style = Some(egui::style::TextStyle::Heading);
+            ui.label(&e.company);
+            ui.style_mut().override_text_style = Some(egui::style::TextStyle::Body);
+            ui.label(e.get_address());
+            ui.label(format!("{} - {}", e.get_start(), e.get_end()));
+            // Show achivement as heading
+            let a = &mut e.achievements[self.current_achievement];
+            ui.style_mut().override_text_style = Some(egui::style::TextStyle::Heading);
+            ui.label(&a.short_description);
+            ui.style_mut().override_text_style = Some(egui::style::TextStyle::Body);
+            for v in &mut a.variants {
+                ui.label(&v.description).on_hover_text(&v.defense);
+            }
+            // Form to add achievement
+            ui.label("Variant");
+            ui.label("Description");
+            ui.text_edit_singleline(&mut self.new_achievement_variant.description);
+            ui.label("Defense");
+            ui.text_edit_singleline(&mut self.new_achievement_variant.defense);
+            if ui.button("Confirm Add").clicked() {
+                self.new_achievement_variant.id = a.variants.len();
+                a.selected_variant = self.new_achievement_variant.id;
+                a.variants.push(self.new_achievement_variant.clone());
+                self.new_achievement_variant = my_text::AchievementVariant {
+                    id: 0,
+                    description: String::from(""),
+                    defense: String::from(""),
+                };
+                self.current_screen_view = ScreenView::Primary;
+                self.current_experience = 0;
+                self.current_achievement = 0;
+                self.current_achievement_variant = 0;
+            }
             if ui.button("Back").clicked() {
                 self.current_screen_view = ScreenView::Primary;
                 self.current_experience = 0;
