@@ -82,9 +82,8 @@ impl TemplateApp {
 
     fn add_achievement(&mut self, ui: &mut egui::Ui, e_index: usize, a_index: usize) {
         let a = &mut self.experiences[e_index].achievements[a_index];
-        let id = ui.next_auto_id().with(format!("{}", &a.short_description));
+        let id = ui.next_auto_id().with(format!("{}{}{}", &a.short_description, e_index, a_index));
         let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
-        state.set_open(a.in_resume);
         state.show_header(ui, |ui| {
             ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
                 ui.label(&a.defense);

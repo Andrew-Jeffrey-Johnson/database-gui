@@ -52,23 +52,6 @@ pub struct Experience {
     pub achievements: Vec<Achievement>,
 }
 impl Experience {
-    pub fn new(
-        start: chrono::DateTime<chrono::offset::Utc>,
-        end: chrono::DateTime<chrono::offset::Utc>,
-        company: String,
-        title: String,
-        address: PostalAddress,
-        achievements: Vec<Achievement>,
-    ) -> Experience {
-        Experience {
-            start: start,
-            end: end,
-            company: company,
-            title: title,
-            address: address,
-            achievements: achievements,
-        }
-    }
     pub fn get_start(&self) -> String {
         self.start.format("%B %Y").to_string()
     }
@@ -99,21 +82,6 @@ pub struct Achievement {
     pub selected_variant: usize,
 }
 impl Achievement {
-    pub fn new(
-        short_description: String,
-        defense: String,
-        variants: Vec<AchievementVariant>,
-        in_resume: bool,
-        selected_variant: usize,
-    ) -> Achievement {
-        Achievement {
-            short_description: short_description,
-            defense: defense,
-            variants: variants,
-            in_resume: in_resume,
-            selected_variant: selected_variant,
-        }
-    }
     pub fn get_short_description(&self) -> &String {
         &self.short_description
     }
