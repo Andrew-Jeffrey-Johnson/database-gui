@@ -15,13 +15,13 @@ pub struct LabelPkg {
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct PostalAddress {
-    pub name: String,
-    pub address1: String,
-    pub address2: String,
-    pub address3: String,
-    pub city: String,
-    pub state: String,
-    pub zip: String,
+    name: String,
+    address1: String,
+    address2: String,
+    address3: String,
+    city: String,
+    state: String,
+    zip: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Company {
@@ -30,38 +30,93 @@ pub struct Company {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct AchievementVariant {
-    pub id: i32,
+    pub id: usize,
     pub description: String,
     pub defense: String,
-    pub in_resume: bool,
+}
+#[derive(Clone, PartialEq, Debug)]
+pub struct Application {
+    pub experiences: Vec<usize>,
+
+    pub category: TextCategory,
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub struct Achievement {
-    pub id: i32,
-    pub short_description: String,
-    pub defense: String,
-    pub variants: Vec<AchievementVariant>,
-    pub in_resume: bool,
-    pub selected_variant: i32,
-}
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Experience {
-    pub id: i32,
     pub start: chrono::DateTime<chrono::offset::Utc>,
     pub end: chrono::DateTime<chrono::offset::Utc>,
     pub company: String,
     pub address: PostalAddress,
     pub achievements: Vec<Achievement>,
-    pub new_achievement: Achievement,
 }
-#[derive(Clone, PartialEq, Debug)]
-pub struct Application {
-    pub id: i32,
-    pub experiences: Vec<Experience>,
+impl Experience {
+    pub fn new(
+        start: chrono::DateTime<chrono::offset::Utc>,
+        end: chrono::DateTime<chrono::offset::Utc>,
+        company: String,
+        address: PostalAddress,
+        achievements: Vec<Achievement>,
+    ) -> Experience {
+        Experience {
+            start: start,
+            end: end,
+            company: company,
+            address: address,
+            achievements: achievements,
+        }
+    }
+    pub fn get_start(&self) -> String {
+        self.start.format("%B %Y").to_string()
+    }
+    pub fn get_end(&self) -> String {
+        self.end.format("%B %Y").to_string()
+    }
+    pub fn get_company(&self) -> &String {
+        &self.company
+    }
+    pub fn get_address(&self) -> String {
+        format!("{}, {}", self.address.city, self.address.state)
+    }
+    pub fn get_achievements(&mut self) -> &mut Vec<Achievement> {
+        &mut self.achievements
+    }
+}
 
-    pub category: TextCategory,
+
+#[derive(Clone, PartialEq, Debug)]
+pub struct Achievement {
+    pub short_description: String,
+    pub defense: String,
+    pub variants: Vec<AchievementVariant>,
+    pub in_resume: bool,
+    pub selected_variant: usize,
+}
+impl Achievement {
+    pub fn new(
+        short_description: String,
+        defense: String,
+        variants: Vec<AchievementVariant>,
+        in_resume: bool,
+        selected_variant: usize,
+    ) -> Achievement {
+        Achievement {
+            short_description: short_description,
+            defense: defense,
+            variants: variants,
+            in_resume: in_resume,
+            selected_variant: selected_variant,
+        }
+    }
+    pub fn get_short_description(&self) -> &String {
+        &self.short_description
+    }
+    pub fn get_defense(&self) -> &String {
+        &self.short_description
+    }
+    pub fn get_variants(&mut self) -> &mut Vec<AchievementVariant> {
+        &mut self.variants
+    }
 }
 
 pub fn get_achievements() -> Vec<Achievement> {
@@ -75,12 +130,10 @@ pub fn get_achievements() -> Vec<Achievement> {
                 id: j,
                 description: desc,
                 defense: String::from("This = that"),
-                in_resume: false,
             };
             variants.push(variant)
         }
         let achievement: Achievement = Achievement {
-            id: i,
             short_description: text,
             defense: String::from("I did this."),
             variants: variants,
@@ -95,9 +148,7 @@ pub fn get_achievements() -> Vec<Achievement> {
 pub fn get_experiences() -> Vec<Experience> {
     let mut experiences: Vec<Experience> = Vec::<Experience>::new();
     let intel_achievements = get_achievements();
-    let intel_len = intel_achievements.len() as i32;
     let intel = Experience {
-        id: 0,
         start: Utc.with_ymd_and_hms(2024, 6, 24, 19, 0, 0).unwrap(),
         end: Utc.with_ymd_and_hms(2024, 11, 15, 23, 0, 0).unwrap(),
         company: String::from("Intel"),
@@ -110,20 +161,10 @@ pub fn get_experiences() -> Vec<Experience> {
             state: String::from("OR"),
             zip: String::from("97124"),
         },
-        achievements: get_achievements(),
-        new_achievement: Achievement {
-            id: intel_len,
-            short_description: String::from(""),
-            defense: String::from(""),
-            variants: Vec::<AchievementVariant>::new(),
-            in_resume: false,
-            selected_variant: 0,
-        },
+        achievements: intel_achievements,
     };
     let billiard_shop_achievements = get_achievements();
-    let billiard_shop_len = billiard_shop_achievements.len() as i32;
     let billiard_shop = Experience {
-        id: 1,
         start: Utc.with_ymd_and_hms(2023, 9, 21, 19, 0, 0).unwrap(),
         end: Utc.with_ymd_and_hms(2024, 6, 8, 23, 0, 0).unwrap(),
         company: String::from("The Billiard Shop"),
@@ -137,14 +178,6 @@ pub fn get_experiences() -> Vec<Experience> {
             zip: String::from("97005"),
         },
         achievements: billiard_shop_achievements,
-        new_achievement: Achievement {
-            id: billiard_shop_len,
-            short_description: String::from(""),
-            defense: String::from(""),
-            variants: Vec::<AchievementVariant>::new(),
-            in_resume: false,
-            selected_variant: 0,
-        },
     };
     experiences.push(intel);
     experiences.push(billiard_shop);
@@ -200,11 +233,11 @@ fn assemble_regex_expression (
     let email_addresses: String = String::from(r"[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+");
     let mut phrases: String = String::from(r"\b(?:");
     // Add all jargon 
-    for (key, value) in jargon {
+    for (key, _value) in jargon {
         phrases.push_str(format!("{key}|").as_str());
     }
     // Add all acronyms 
-    for (key, value) in acronyms {
+    for (key, _value) in acronyms {
         phrases.push_str(format!("{key}|").as_str());
     }
     phrases.pop(); // Remove last |

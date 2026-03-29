@@ -4,25 +4,43 @@
 mod my_database;
 mod my_text;
 
+enum ScreenView {
+    Primary,
+    AddingAchievement,
+    AddingAchievementVariant,
+}
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    current_screen_view: ScreenView,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    current_experience: usize,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    current_achievement: usize,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    current_achievement_variant: usize,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    experiences: Vec<my_text::Experience>,
     description: String,
     summary: String,
     #[serde(skip)] // This how you opt-out of serialization of a field
     description_segments: Vec<Vec<my_text::LabelPkg>>,
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    experiences: Vec<my_text::Experience>,
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
         Self {
+            current_screen_view: ScreenView::Primary,
+            current_experience: 0,
+            current_achievement: 0,
+            current_achievement_variant: 0,
+            experiences: Vec::<my_text::Experience>::new(),
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
             description_segments: Vec::<Vec<my_text::LabelPkg>>::new(),
-            experiences: Vec::<my_text::Experience>::new(),
         }
     }
 }
@@ -40,6 +58,108 @@ impl TemplateApp {
         } else {
             Default::default()
         }
+    }
+
+    fn add_achievement(&mut self, ui: &mut egui::Ui, e_index: usize, a_index: usize) {
+        let a = &mut self.experiences[e_index].achievements[a_index];
+        let id = ui.next_auto_id().with(format!("{}", &a.short_description));
+        let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
+        state.set_open(a.in_resume);
+        state.show_header(ui, |ui| {
+            ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
+                ui.label(&a.defense);
+            });
+        }).body(|ui| {
+            for v in &mut a.variants {
+                ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
+            }
+            if ui.button("Add Achivement Variant").clicked() {
+                self.current_screen_view = ScreenView::AddingAchievementVariant;
+                self.current_experience = e_index;
+                self.current_achievement = a_index;
+            }
+        });
+    }
+
+    fn add_experience(&mut self, ui: &mut egui::Ui, e_index: usize) {
+        ui.scope(|ui| {
+            let e = &self.experiences[e_index];
+            ui.style_mut().interaction.tooltip_delay = 0.0;
+            ui.style_mut().interaction.show_tooltips_only_when_still = false;
+            ui.label(e.get_company());
+            ui.label(e.get_address());
+            ui.label(format!("{} - {}", e.get_start(), e.get_end()));
+            for a_index in 0..e.achievements.len() {
+                self.add_achievement(ui, e_index, a_index as usize);
+            }
+            if ui.button("Add Achivement").clicked() {
+                self.current_screen_view = ScreenView::AddingAchievement;
+                self.current_experience = e_index;
+            }
+        });
+    }
+
+    fn view_primary(&mut self, ctx: &egui::Context) {
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.columns_const(|[col_1, col_2, col_3]| {
+                col_1.vertical(|col_1| {
+                    col_1.label("Description");
+                    if col_1.button("Send Description").clicked() {
+                        my_database::create_description(&self.description);
+                    }
+                    add_original_description(col_1, &mut self.description);
+                    col_1.separator();
+                    if col_1.button("Segment Description").clicked() {
+                        self.description_segments = my_text::segment_description(&self.description);
+                    }
+                    add_annotated_description(col_1, &self.description_segments);
+                });
+                col_2.vertical(|col_2| {
+                    col_2.label("Resume");
+                    if col_2.button("Get Experiences").clicked() {
+                        self.experiences = my_text::get_experiences();
+                    }
+                    for e_index in 0..self.experiences.len() {
+                        self.add_experience(col_2, e_index);
+                    }
+                });
+                col_3.vertical(|col_3| {
+                    for e in &mut self.experiences {
+                        show_resume_content(col_3, e);
+                    }
+                });
+            });
+        });
+    }
+
+    fn view_adding_achivement(&mut self, ctx: &egui::Context) {
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("Adding Achivement");
+            self.add_experience(ui, self.current_experience);
+            if ui.button("Back").clicked() {
+                self.current_screen_view = ScreenView::Primary;
+                self.current_experience = 0;
+                self.current_achievement = 0;
+                self.current_achievement_variant = 0;
+            }
+        });
+    }
+
+    fn view_adding_achivement_variant(&mut self, ctx: &egui::Context) {
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("Adding Achivement Variant");
+            self.add_achievement(ui, self.current_experience, self.current_achievement);
+            if ui.button("Back").clicked() {
+                self.current_screen_view = ScreenView::Primary;
+                self.current_experience = 0;
+                self.current_achievement = 0;
+                self.current_achievement_variant = 0;
+            }
+        });
     }
 }
 
@@ -72,39 +192,12 @@ impl eframe::App for TemplateApp {
                 egui::widgets::global_theme_preference_buttons(ui);
             });
         });
-
-        // CentralPanel should always be last
-        egui::CentralPanel::default().show(ctx, |ui| {
-            // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.columns_const(|[col_1, col_2, col_3]| {
-                col_1.vertical(|col_1| {
-                    col_1.label("Description");
-                    if col_1.button("Send Description").clicked() {
-                        my_database::create_description(&self.description);
-                    }
-                    add_original_description(col_1, &mut self.description);
-                    col_1.separator();
-                    if col_1.button("Segment Description").clicked() {
-                        self.description_segments = my_text::segment_description(&self.description);
-                    }
-                    add_annotated_description(col_1, &self.description_segments);
-                });
-                col_2.vertical(|col_2| {
-                    col_2.label("Resume");
-                    if col_2.button("Get Experiences").clicked() {
-                        self.experiences = my_text::get_experiences();
-                    }
-                    for e in &mut self.experiences {
-                        add_experience(col_2, e);
-                    }
-                });
-                col_3.vertical(|col_3| {
-                    for e in &mut self.experiences {
-                        show_resume_content(col_3, e);
-                    }
-                });
-            });
-        });
+        
+        match self.current_screen_view {
+            ScreenView::Primary => self.view_primary(ctx),
+            ScreenView::AddingAchievement => self.view_adding_achivement(ctx),
+            ScreenView::AddingAchievementVariant => self.view_adding_achivement_variant(ctx),
+        }
     }
 }
 
@@ -124,10 +217,8 @@ fn show_resume_content(ui: &mut egui::Ui, e: &mut my_text::Experience) {
         ui.style_mut().override_text_style = Some(egui::style::TextStyle::Heading);
         ui.label(&e.company);
         ui.style_mut().override_text_style = Some(egui::style::TextStyle::Body);
-        ui.label(format!("{}, {}", e.address.city, e.address.state));
-        let start = e.start.format("%B %Y").to_string();
-        let end = e.end.format("%B %Y").to_string();
-        ui.label(format!("{} - {}", start, end));
+        ui.label(e.get_address());
+        ui.label(format!("{} - {}", e.get_start(), e.get_end()));
         for a in &mut e.achievements {
             for v in &mut a.variants {
                 if a.in_resume && v.id == a.selected_variant {
@@ -138,60 +229,6 @@ fn show_resume_content(ui: &mut egui::Ui, e: &mut my_text::Experience) {
     });
 }
 
-fn add_achievement(ui: &mut egui::Ui, a: &mut my_text::Achievement) {
-    let id = ui.next_auto_id().with(format!("{}", &a.short_description));
-    let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
-    state.set_open(a.in_resume);
-    state.show_header(ui, |ui| {
-        ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
-            ui.label(&a.defense);
-        });
-    }).body(|ui| {
-        for v in &mut a.variants {
-            ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
-        }
-    });
-}
-
-fn add_new_achievement(ui: &mut egui::Ui, a: &mut my_text::Achievement) {
-    let id = ui.next_auto_id().with(format!("{}", &a.short_description));
-    let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
-    state.set_open(a.in_resume);
-    state.show_header(ui, |ui| {
-        ui.add(egui::Checkbox::without_text(&mut a.in_resume));
-        ui.text_edit_singleline(&mut a.short_description).on_hover_ui(|ui| {
-            ui.label(&a.defense);
-        });
-    }).body(|ui| {
-        for v in &mut a.variants {
-            ui.radio_value(&mut a.selected_variant, v.id, &v.description).on_hover_text(&v.defense);
-        }
-    });
-}
-
-fn add_experience(ui: &mut egui::Ui, e: &mut my_text::Experience) {
-    ui.scope(|ui| {
-        ui.style_mut().interaction.tooltip_delay = 0.0;
-        ui.style_mut().interaction.show_tooltips_only_when_still = false;
-        ui.label(&e.company);
-        ui.label(format!("{}, {}", e.address.city, e.address.state));
-        let start = e.start.format("%B %Y").to_string();
-        let end = e.end.format("%B %Y").to_string();
-        ui.label(format!("{} - {}", start, end));
-        for a in &mut e.achievements {
-            add_achievement(ui, a);
-        }
-        add_new_achievement(ui, &mut e.new_achievement);
-    });
-}
-
-fn add_application(ui: &mut egui::Ui, application: &mut String) {
-    ui.label("Summary");
-    ui.add_enabled(true, egui::TextEdit::multiline(application)
-        .desired_rows(10)
-        .desired_width(f32::INFINITY)
-    );
-}
 
 fn add_acronym_label(ui: &mut egui::Ui, acronym: &String, tooltip: &String) {
     ui.label(egui::RichText::new(acronym).color(egui::Color32::RED).underline()).on_hover_text(tooltip);
