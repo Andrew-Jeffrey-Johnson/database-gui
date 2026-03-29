@@ -149,6 +149,10 @@ impl TemplateApp {
                     for e in &mut self.experiences {
                         show_resume_content(col_3, e);
                     }
+                    if col_3.button("Generate LaTex").clicked() {
+                        let sum = String::from("This is a summary");
+                        my_text::latex_gen(&sum, &self.experiences);
+                    }
                 });
             });
         });
