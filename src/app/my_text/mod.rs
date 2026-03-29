@@ -362,12 +362,12 @@ pub fn latex_gen(
             continue;
         }
         professional_experience_body.push(format!(r"
-            \noindent{{\textbf{{{}}} – \textit{{Hillsboro, OR}}}}\\
+            \noindent{{\textbf{{{}}} – \textit{{{}}}}}\\
             {{{}}} 
             \hspace*{{\fill}}
-            \textit{{{}}}
+            \textit{{{} - {}}}
             \begin{{itemize}}
-            ", e.company, e.title, e.get_address()));
+            ", e.company, e.get_address(), e.title, e.get_start(), e.get_end()));
         for a in &e.achievements {
             if a.in_resume {
                 professional_experience_body.push(format!(r"
@@ -436,7 +436,7 @@ pub fn latex_gen(
         ");
     use std::fs::File;
     use std::io::Write;
-    let f = File::create("output_resume/resume.txt");
+    let f = File::create("output_resume/resume.tex");
     write!(f.expect("REASON"), 
         "{}{}{}{}{}{}", 
         document_heading, 
@@ -445,4 +445,15 @@ pub fn latex_gen(
         professional_experience_heading,
         professional_experience_body.join(" "),
         document_ending);
+    // Generate PDF
+    use std::process::Command;
+    let result = Command::new("pdflatex")
+        .arg("-output-directory=./output_resume")
+        .arg("-jobname=Andrew_Johnson")
+        .arg("output_resume/resume.tex")
+        .output();
+    match result {
+        Ok(output) => println!("Success: {}", output.status),
+        Err(e) => eprintln!("Failed to run command: {}", e),
+    }
 }
