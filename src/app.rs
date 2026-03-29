@@ -1,8 +1,8 @@
 // Go here for inspiration
 // https://www.egui.rs/#demo
 
-mod my_database;
-mod my_text;
+#[path = "my_text.rs"] mod my_text;
+#[path = "my_database.rs"] mod my_database;
 
 enum ScreenView {
     Primary,
