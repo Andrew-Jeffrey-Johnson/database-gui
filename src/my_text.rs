@@ -405,7 +405,7 @@ pub fn latex_gen(
     use std::fs::File;
     use std::io::Write;
     let f = File::create("output_resume/resume.tex");
-    write!(f.expect("REASON"), 
+    let _ = write!(f.expect("REASON"), 
         "{}{}{}{}{}{}", 
         document_heading, 
         contact_section,

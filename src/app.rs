@@ -68,6 +68,21 @@ impl Default for TemplateApp {
 impl TemplateApp {
     /// Called once before the first frame.
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
+        // Get information from database
+        let ex = my_database::get_experience(0);
+        match ex {
+            Ok(e) => println!("ID:{}, Employer ID:{}, Title:{}", e.id, e.employing_entity_id, e.title),
+            Err(v) => println!("Failed to Get Experience: {v:?}"),
+        }
+
+        println!("I am going to print all experiences in the database:");
+        let exs = my_database::get_all_experiences();
+        match exs {
+            Ok(a) => for row in a {
+                println!("ID:{}, Employer ID:{}, Title:{}", row.id, row.employing_entity_id, row.title);
+            },
+            Err(v) => println!("Failed to Get Experiences: {v:?}"),
+        }
         // This is also where you can customize the look and feel of egui using
         // `cc.egui_ctx.set_visuals` and `cc.egui_ctx.set_fonts`.
 
@@ -83,7 +98,7 @@ impl TemplateApp {
     fn add_achievement(&mut self, ui: &mut egui::Ui, e_index: usize, a_index: usize) {
         let a = &mut self.experiences[e_index].achievements[a_index];
         let id = ui.next_auto_id().with(format!("{}{}{}", &a.short_description, e_index, a_index));
-        let mut state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
+        let state = egui::collapsing_header::CollapsingState::load_with_default_open(ui.ctx(), id, false);
         state.show_header(ui, |ui| {
             ui.checkbox(&mut a.in_resume, &a.short_description).on_hover_ui(|ui| {
                 ui.label(&a.defense);

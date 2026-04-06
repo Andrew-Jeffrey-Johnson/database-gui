@@ -1,5 +1,7 @@
 
 use tokio;
+use chrono::offset::TimeZone;
+use chrono::offset::Utc;
 
 async fn setup() -> sqlx::Pool<sqlx::Postgres> {
     // Login information to database
@@ -22,6 +24,28 @@ pub fn create_description(original_text: &str) {
         let pool = setup().await;
         let _ = create_description_async(&pool, original_text).await;
     }));
+}
+
+pub fn get_experience(id: i32) -> Result<ExperienceSql, sqlx::Error>{
+    let rt = tokio::runtime::Runtime::new();
+    let experience = rt.expect("REASON").block_on(async {
+        let pool = setup().await;
+        get_experience_sql(&pool, id).await
+    });
+    return experience;
+}
+
+pub fn get_all_experiences() -> Result<Vec<ExperienceSql>, sqlx::Error>{
+    let rt = tokio::runtime::Runtime::new();
+    let experiences = rt.expect("REASON").block_on(async {
+        let pool = setup().await;
+        let experience_sql = 
+            sqlx::query_as::<_, ExperienceSql>("SELECT * FROM \"Experiences\"")
+            .fetch_all(&pool)
+            .await?;
+        Ok(experience_sql)
+    });
+    return experiences;
 }
 
 
@@ -143,4 +167,48 @@ pub async fn delete_application_facilitator(
         .execute(pool)
         .await?;
     Ok(())
+}
+
+// ------------------ Experience ----------------------------------
+#[derive(sqlx::FromRow)]
+pub struct ExperienceSql {
+    pub id: i32,
+    pub employing_entity_id: i32,
+    pub title: String,
+}
+
+pub async fn create_experience_sql(
+    pool: &sqlx::PgPool, 
+    employing_entity_id: i32, 
+    title: &str) 
+    -> Result<(), sqlx::Error> 
+{
+    sqlx::query("INSERT INTO \"Experiences\" (employing_entity_id, title) VALUES ($1, $2)")
+        .bind(employing_entity_id)
+        .bind(title)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_experience_sql(
+    pool: &sqlx::PgPool, 
+    experience_sql_id: i32) 
+    -> Result<ExperienceSql, sqlx::Error> 
+{
+    let experience_sql = 
+        sqlx::query_as::<_, ExperienceSql>("SELECT * FROM \"Experiences\" WHERE id = $1")
+        .bind(experience_sql_id)
+        .fetch_one(pool)
+        .await?;
+    Ok(experience_sql)
+}
+
+pub async fn get_all_experience_sql(pool: &sqlx::PgPool) -> Result<Vec<ExperienceSql>, sqlx::Error> 
+{
+    let experience_sql = 
+        sqlx::query_as::<_, ExperienceSql>("SELECT * FROM \"Experiences\"")
+        .fetch_all(pool)
+        .await?;
+    Ok(experience_sql)
 }
