@@ -204,11 +204,3 @@ pub async fn get_experience_sql(
     Ok(experience_sql)
 }
 
-pub async fn get_all_experience_sql(pool: &sqlx::PgPool) -> Result<Vec<ExperienceSql>, sqlx::Error> 
-{
-    let experience_sql = 
-        sqlx::query_as::<_, ExperienceSql>("SELECT * FROM \"Experiences\"")
-        .fetch_all(pool)
-        .await?;
-    Ok(experience_sql)
-}
