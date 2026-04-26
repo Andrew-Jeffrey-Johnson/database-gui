@@ -6,8 +6,10 @@
 
 enum ScreenView {
     Primary,
+    AddingExperience,
     AddingAchievement,
     AddingAchievementVariant,
+    AddingPostalAddress,
 }
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -25,9 +27,13 @@ pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     experiences: Vec<my_text::Experience>,
     #[serde(skip)] // This how you opt-out of serialization of a field
+    new_experience: my_text::Experience,
+    #[serde(skip)] // This how you opt-out of serialization of a field
     new_achievement: my_text::Achievement,
     #[serde(skip)] // This how you opt-out of serialization of a field
     new_achievement_variant: my_text::AchievementVariant,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    new_postal_address: my_text::PostalAddress,
     description: String,
     summary: String,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -42,6 +48,23 @@ impl Default for TemplateApp {
             current_achievement: 0,
             current_achievement_variant: 0,
             experiences: Vec::<my_text::Experience>::new(),
+            new_experience: my_text::Experience {
+                id: 0,
+                start: chrono::offset::Utc::now(),
+                end: chrono::offset::Utc::now(),
+                company: String::from(""),
+                title: String::from(""),
+                address: my_text::PostalAddress {
+                    name: String::from(""),
+                    address1: String::from(""),
+                    address2: String::from(""),
+                    address3: String::from(""),
+                    city: String::from(""),
+                    state: String::from(""),
+                    zip: String::from(""),
+                },
+                achievements: Vec::<my_text::Achievement>::new(),
+            },
             new_achievement: my_text::Achievement {
                 short_description: String::from(""),
                 defense: String::from(""),
@@ -57,6 +80,15 @@ impl Default for TemplateApp {
                 id: 0,
                 description: String::from(""),
                 defense: String::from(""),
+            },
+            new_postal_address: my_text::PostalAddress {
+                name: String::from(""),
+                address1: String::from(""),
+                address2: String::from(""),
+                address3: String::from(""),
+                city: String::from(""),
+                state: String::from(""),
+                zip: String::from(""),
             },
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
@@ -130,6 +162,7 @@ impl TemplateApp {
                 self.current_screen_view = ScreenView::AddingAchievement;
                 self.current_experience = e_index;
             }
+            
         });
     }
 
@@ -158,6 +191,9 @@ impl TemplateApp {
                     for e_index in 0..self.experiences.len() {
                         self.add_experience(col_2, e_index);
                     }
+                    if col_2.button("Add Experience").clicked() {
+                        self.current_screen_view = ScreenView::AddingExperience;
+                    }
                 });
                 col_3.vertical(|col_3| {
                     for e in &mut self.experiences {
@@ -169,6 +205,92 @@ impl TemplateApp {
                     }
                 });
             });
+        });
+    }
+
+    fn view_adding_experience(&mut self, ctx: &egui::Context) {
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("Adding Experience");
+            // Form to add experience
+            ui.label("Title");
+            ui.text_edit_singleline(&mut self.new_experience.title);
+            if ui.button("Confirm Add").clicked() {
+                // Add it to the database
+                let _id = my_database::create_experience(0, &self.new_experience.title, &self.new_experience.start, &self.new_experience.end, 0);
+                // Add it to the cache
+                self.experiences.push(self.new_experience.clone());
+                // Reset
+                self.current_screen_view = ScreenView::Primary;
+                self.new_experience.id = 0;
+                self.new_experience.start = chrono::offset::Utc::now();
+                self.new_experience.end = chrono::offset::Utc::now();
+                self.new_experience.company = String::from("");
+                self.new_experience.title = String::from("");
+                self.new_experience.address = my_text::PostalAddress {
+                    name: String::from(""),
+                    address1: String::from(""),
+                    address2: String::from(""),
+                    address3: String::from(""),
+                    city: String::from(""),
+                    state: String::from(""),
+                    zip: String::from(""),
+                };
+                self.new_experience.achievements = Vec::<my_text::Achievement>::new();
+            }
+            if ui.button("Add New Postal Address").clicked() {
+                self.current_screen_view = ScreenView::AddingPostalAddress;
+            }
+            if ui.button("Back").clicked() {
+                self.current_screen_view = ScreenView::Primary;
+            }
+        });
+    }
+
+    fn view_adding_postal_address(&mut self, ctx: &egui::Context) {
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("Adding Postal Address");
+            // Form to add experience
+            ui.label("Name");
+            ui.text_edit_singleline(&mut self.new_postal_address.name);
+            ui.label("Line 1");
+            ui.text_edit_singleline(&mut self.new_postal_address.address1);
+            ui.label("Line 2");
+            ui.text_edit_singleline(&mut self.new_postal_address.address2);
+            ui.label("Line 3");
+            ui.text_edit_singleline(&mut self.new_postal_address.address3);
+            ui.label("City");
+            ui.text_edit_singleline(&mut self.new_postal_address.city);
+            ui.label("State");
+            ui.text_edit_singleline(&mut self.new_postal_address.state);
+            ui.label("Zip Code");
+            ui.text_edit_singleline(&mut self.new_postal_address.zip);
+            if ui.button("Confirm Add").clicked() {
+                // Add it to the database
+                let _id = my_database::create_postal_address(
+                    &self.new_postal_address.name, 
+                    &self.new_postal_address.address1, 
+                    &self.new_postal_address.address2, 
+                    &self.new_postal_address.address3, 
+                    &self.new_postal_address.city, 
+                    &self.new_postal_address.state, 
+                    &self.new_postal_address.zip);
+                // Reset
+                self.current_screen_view = ScreenView::Primary;
+                self.new_postal_address = my_text::PostalAddress {
+                    name: String::from(""),
+                    address1: String::from(""),
+                    address2: String::from(""),
+                    address3: String::from(""),
+                    city: String::from(""),
+                    state: String::from(""),
+                    zip: String::from(""),
+                };
+            }
+            if ui.button("Back").clicked() {
+                self.current_screen_view = ScreenView::Primary;
+            }
         });
     }
 
@@ -194,6 +316,9 @@ impl TemplateApp {
             ui.label("Defense");
             ui.text_edit_singleline(&mut self.new_achievement.variants[0].defense);
             if ui.button("Confirm Add").clicked() {
+                // Add it to the database
+                my_database::create_achivement(e.id, &self.new_achievement.short_description, &self.new_achievement.defense);
+                // Add it to the cache
                 self.new_achievement.in_resume = true;
                 e.achievements.push(self.new_achievement.clone());
                 self.new_achievement = my_text::Achievement {
@@ -302,8 +427,10 @@ impl eframe::App for TemplateApp {
         
         match self.current_screen_view {
             ScreenView::Primary => self.view_primary(ctx),
+            ScreenView::AddingExperience => self.view_adding_experience(ctx),
             ScreenView::AddingAchievement => self.view_adding_achivement(ctx),
             ScreenView::AddingAchievementVariant => self.view_adding_achivement_variant(ctx),
+            ScreenView::AddingPostalAddress => self.view_adding_postal_address(ctx),
         }
     }
 }

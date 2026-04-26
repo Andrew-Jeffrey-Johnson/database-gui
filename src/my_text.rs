@@ -15,13 +15,13 @@ pub struct LabelPkg {
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct PostalAddress {
-    name: String,
-    address1: String,
-    address2: String,
-    address3: String,
-    city: String,
-    state: String,
-    zip: String,
+    pub name: String,
+    pub address1: String,
+    pub address2: String,
+    pub address3: String,
+    pub city: String,
+    pub state: String,
+    pub zip: String,
 }
 #[derive(Clone, PartialEq, Debug)]
 pub struct Company {
@@ -44,6 +44,7 @@ pub struct Application {
 
 #[derive(Clone, PartialEq, Debug)]
 pub struct Experience {
+    pub id: i32,
     pub start: chrono::DateTime<chrono::offset::Utc>,
     pub end: chrono::DateTime<chrono::offset::Utc>,
     pub company: String,
@@ -123,6 +124,7 @@ pub fn get_experiences() -> Vec<Experience> {
     let mut experiences: Vec<Experience> = Vec::<Experience>::new();
     let intel_achievements = get_achievements();
     let intel = Experience {
+        id: 1,
         start: Utc.with_ymd_and_hms(2024, 6, 24, 19, 0, 0).unwrap(),
         end: Utc.with_ymd_and_hms(2024, 11, 15, 23, 0, 0).unwrap(),
         company: String::from("Intel"),
@@ -140,6 +142,7 @@ pub fn get_experiences() -> Vec<Experience> {
     };
     let billiard_shop_achievements = get_achievements();
     let billiard_shop = Experience {
+        id: 2,
         start: Utc.with_ymd_and_hms(2023, 9, 21, 19, 0, 0).unwrap(),
         end: Utc.with_ymd_and_hms(2024, 6, 8, 23, 0, 0).unwrap(),
         company: String::from("The Billiard Shop"),

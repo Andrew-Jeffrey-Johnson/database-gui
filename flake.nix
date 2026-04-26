@@ -23,7 +23,10 @@
         ];
         config = { };
       };
-      runtimeDeps = [ ];
+      runtimeDeps = [
+        pkgs.mistral-rs
+        pkgs.mistralclient
+      ];
       buildDeps = [
         pkgs.pkg-config
         pkgs.rustPlatform.bindgenHook
@@ -41,13 +44,18 @@
         pkgs.wayland
 
         # x11 libraries
-        pkgs.xorg.libXcursor
-        pkgs.xorg.libXrandr
-        pkgs.xorg.libXi
-        pkgs.xorg.libX11
+        pkgs.libXcursor
+        pkgs.libXrandr
+        pkgs.libXi
+        pkgs.libX11
+
+        pkgs.mistral-rs
+        pkgs.mistralclient
       ];
       devDeps = [
         pkgs.gdb
+        pkgs.mistral-rs
+        pkgs.mistralclient
       ];
 
       cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);

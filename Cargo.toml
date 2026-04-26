@@ -25,12 +25,12 @@ log = "0.4.27"
 serde = { version = "1.0.219", features = ["derive"] }
 # PostgreSQL
 tokio = { version = "1.41.0", features = ["full", "rt"] }
-sqlx = { version = "0.8.6", features = ["postgres", "runtime-tokio", "runtime-tokio-rustls"] }
+sqlx = { version = "0.8.6", features = ["chrono", "postgres", "runtime-tokio", "runtime-tokio-rustls"] }
 dotenv = "0.15"
 # Regex
 regex = "1.12.3"
 # Date and time
-chrono = "0.4.43"
+chrono = { version = "0.4.43", features = ["clock", "serde"] }
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
