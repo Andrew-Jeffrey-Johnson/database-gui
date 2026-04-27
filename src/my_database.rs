@@ -4,15 +4,28 @@ use chrono::offset::TimeZone;
 use chrono::offset::Utc;
 use sqlx::Row;
 
-struct PostalAddressSQL {
+
+#[derive(sqlx::FromRow, Debug, PartialEq, Eq)]
+pub struct PostalAddressSQL {
    pub id: i32,
    pub name: String,
    pub line_1: String,
    pub line_2: String,
+   pub line_3: String,
    pub city: String,
    pub state: String,
    pub zip_code: String,
 }
+//pub struct PostalAddressSQL {
+//   pub id: i32,
+//   pub name: Option<String>,
+//   pub line_1: Option<String>,
+//   pub line_2: Option<String>,
+//   pub line_3: Option<String>,
+//   pub city: Option<String>,
+//   pub state: Option<String>,
+//   pub zip_code: Option<String>,
+//}
 struct ContactSQL {
    pub id: i32,
    pub first_name: String,
@@ -142,6 +155,32 @@ pub fn create_postal_address(
         id_raw.unwrap().get::<i32, usize>(0)
     });
     return id;
+}
+pub fn fetch_all_from_postal_address() -> Vec<PostalAddressSQL> {
+    let rt = tokio::runtime::Runtime::new();
+    let all_rows = rt.expect("REASON").block_on(async {
+        let pool = setup().await;
+        let raw: Vec<PostalAddressSQL> = sqlx::query_as(
+            "SELECT 
+                id,
+                name,
+                line_1,
+                line_2,
+                line_3,
+                city,
+                state,
+                zip_code
+            FROM
+                postal_address
+            ORDER BY
+                id
+            ")
+            .fetch_all(&pool)
+            .await.expect("REASON");
+        //raw.unwrap()
+        raw
+    });
+    return all_rows;
 }
 
 pub fn create_contact(

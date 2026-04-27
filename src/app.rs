@@ -4,8 +4,10 @@
 #[path = "my_text.rs"] mod my_text;
 #[path = "my_database.rs"] mod my_database;
 
+#[derive(PartialEq)]
 enum ScreenView {
     Primary,
+    Select,
     AddingExperience,
     AddingAchievement,
     AddingAchievementVariant,
@@ -18,6 +20,12 @@ enum ScreenView {
 pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     current_screen_view: ScreenView,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    is_diff_screen_view: bool,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    postal_addresses: Vec<my_database::PostalAddressSQL>,
+    #[serde(skip)] // This how you opt-out of serialization of a field
+    screen_view_history: Vec<(ScreenView, i32)>,
     #[serde(skip)] // This how you opt-out of serialization of a field
     current_experience: usize,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -44,6 +52,9 @@ impl Default for TemplateApp {
     fn default() -> Self {
         Self {
             current_screen_view: ScreenView::Primary,
+            is_diff_screen_view: false,
+            postal_addresses: Vec::<my_database::PostalAddressSQL>::new(),
+            screen_view_history: vec![(ScreenView::Primary, 0)],
             current_experience: 0,
             current_achievement: 0,
             current_achievement_variant: 0,
@@ -141,6 +152,7 @@ impl TemplateApp {
             }
             if ui.button("Add Achivement Variant").clicked() {
                 self.current_screen_view = ScreenView::AddingAchievementVariant;
+                self.is_diff_screen_view = true;
                 self.current_experience = e_index;
                 self.current_achievement = a_index;
             }
@@ -160,6 +172,7 @@ impl TemplateApp {
             }
             if ui.button("Add Achivement").clicked() {
                 self.current_screen_view = ScreenView::AddingAchievement;
+                self.is_diff_screen_view = true;
                 self.current_experience = e_index;
             }
             
@@ -167,6 +180,13 @@ impl TemplateApp {
     }
 
     fn view_primary(&mut self, ctx: &egui::Context) {
+        match self.screen_view_history.last() {
+            Some((a, b)) if *a == ScreenView::Primary => (),
+            _ => {
+                self.screen_view_history.push((ScreenView::Primary, 0));
+                println!("{}", self.screen_view_history.len());
+            },
+        };
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
@@ -193,6 +213,57 @@ impl TemplateApp {
                     }
                     if col_2.button("Add Experience").clicked() {
                         self.current_screen_view = ScreenView::AddingExperience;
+                        self.is_diff_screen_view = true;
+                    }
+                });
+                col_3.vertical(|col_3| {
+                    for e in &mut self.experiences {
+                        show_resume_content(col_3, e);
+                    }
+                    if col_3.button("Generate LaTex").clicked() {
+                        let sum = String::from("This is a summary");
+                        my_text::latex_gen(&sum, &self.experiences);
+                    }
+                });
+            });
+        });
+    }
+
+    fn view_select(&mut self, ctx: &egui::Context) {
+        match self.screen_view_history.last() {
+            Some((a, b)) if *a == ScreenView::Select => (),
+            _ => {
+                self.screen_view_history.push((ScreenView::Select, 0));
+                println!("{}", self.screen_view_history.len());
+            },
+        };
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ctx, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.columns_const(|[col_1, col_2, col_3]| {
+                col_1.vertical(|col_1| {
+                    col_1.label("Description");
+                    if col_1.button("Send Description").clicked() {
+                        my_database::create_description(&self.description);
+                    }
+                    add_original_description(col_1, &mut self.description);
+                    col_1.separator();
+                    if col_1.button("Segment Description").clicked() {
+                        self.description_segments = my_text::segment_description(&self.description);
+                    }
+                    add_annotated_description(col_1, &self.description_segments);
+                });
+                col_2.vertical(|col_2| {
+                    col_2.label("Resume");
+                    if col_2.button("Get Experiences").clicked() {
+                        self.experiences = my_text::get_experiences();
+                    }
+                    for e_index in 0..self.experiences.len() {
+                        self.add_experience(col_2, e_index);
+                    }
+                    if col_2.button("Add Experience").clicked() {
+                        self.current_screen_view = ScreenView::AddingExperience;
+                        self.is_diff_screen_view = true;
                     }
                 });
                 col_3.vertical(|col_3| {
@@ -209,18 +280,32 @@ impl TemplateApp {
     }
 
     fn view_adding_experience(&mut self, ctx: &egui::Context) {
+        match self.screen_view_history.last() {
+            Some((ScreenView::AddingExperience, _b)) => (),
+            Some((ScreenView::AddingPostalAddress, _b)) => {
+                ()
+            },
+            _ => {
+                self.screen_view_history.push((ScreenView::AddingExperience, self.new_experience.id));
+                println!("{}", self.screen_view_history.len());
+            },
+        };
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Adding Experience");
             // Form to add experience
             ui.label("Title");
             ui.text_edit_singleline(&mut self.new_experience.title);
+            ui.label("Postal Address");
+            if ui.button("Select Postal Address").clicked() {
+            }
             if ui.button("Confirm Add").clicked() {
                 // Add it to the database
                 let _id = my_database::create_experience(0, &self.new_experience.title, &self.new_experience.start, &self.new_experience.end, 0);
                 // Add it to the cache
                 self.experiences.push(self.new_experience.clone());
                 // Reset
+                self.is_diff_screen_view = true;
                 self.current_screen_view = ScreenView::Primary;
                 self.new_experience.id = 0;
                 self.new_experience.start = chrono::offset::Utc::now();
@@ -240,14 +325,24 @@ impl TemplateApp {
             }
             if ui.button("Add New Postal Address").clicked() {
                 self.current_screen_view = ScreenView::AddingPostalAddress;
+                self.is_diff_screen_view = true;
             }
             if ui.button("Back").clicked() {
                 self.current_screen_view = ScreenView::Primary;
+                self.is_diff_screen_view = true;
             }
         });
     }
 
     fn view_adding_postal_address(&mut self, ctx: &egui::Context) {
+        // First Time Entering Screen View
+        if self.is_diff_screen_view {
+            self.is_diff_screen_view = false;
+            self.postal_addresses = my_database::fetch_all_from_postal_address();
+            for address in &self.postal_addresses {
+                println!("{}{}{}{}{}{}{}", address.name, address.line_1, address.line_2, address.line_3, address.city, address.state, address.zip_code);
+            }
+        }
         // CentralPanel should always be last
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Adding Postal Address");
@@ -267,6 +362,7 @@ impl TemplateApp {
             ui.label("Zip Code");
             ui.text_edit_singleline(&mut self.new_postal_address.zip);
             if ui.button("Confirm Add").clicked() {
+                self.is_diff_screen_view = true;
                 // Add it to the database
                 let _id = my_database::create_postal_address(
                     &self.new_postal_address.name, 
@@ -289,7 +385,19 @@ impl TemplateApp {
                 };
             }
             if ui.button("Back").clicked() {
-                self.current_screen_view = ScreenView::Primary;
+                self.is_diff_screen_view = true;
+                self.current_screen_view = match self.screen_view_history.pop() {
+                    Some((a, _b)) => a,
+                    _ => ScreenView::Primary,
+                };
+            }
+            ui.label("All Current Postal Addresses");
+            for address in &self.postal_addresses {
+                if !address.name.is_empty() {ui.label(&address.name);};
+                if !address.line_1.is_empty() {ui.label(&address.line_1);};
+                if !address.line_2.is_empty() {ui.label(&address.line_2);};
+                if !address.line_3.is_empty() {ui.label(&address.line_3);};
+                ui.label(format!("{}, {} {}", address.city, address.state, address.zip_code));
             }
         });
     }
@@ -431,6 +539,7 @@ impl eframe::App for TemplateApp {
             ScreenView::AddingAchievement => self.view_adding_achivement(ctx),
             ScreenView::AddingAchievementVariant => self.view_adding_achivement_variant(ctx),
             ScreenView::AddingPostalAddress => self.view_adding_postal_address(ctx),
+            ScreenView::Select => self.view_select(ctx),
         }
     }
 }
