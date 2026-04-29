@@ -16,16 +16,6 @@ pub struct PostalAddressSQL {
    pub state: String,
    pub zip_code: String,
 }
-//pub struct PostalAddressSQL {
-//   pub id: i32,
-//   pub name: Option<String>,
-//   pub line_1: Option<String>,
-//   pub line_2: Option<String>,
-//   pub line_3: Option<String>,
-//   pub city: Option<String>,
-//   pub state: Option<String>,
-//   pub zip_code: Option<String>,
-//}
 struct ContactSQL {
    pub id: i32,
    pub first_name: String,
@@ -156,11 +146,11 @@ pub fn create_postal_address(
     });
     return id;
 }
-pub fn fetch_all_from_postal_address() -> Vec<PostalAddressSQL> {
+pub fn fetch_all_from_postal_address() -> Vec<(i32, String, String, String, String, String, String, String)> {
     let rt = tokio::runtime::Runtime::new();
     let all_rows = rt.expect("REASON").block_on(async {
         let pool = setup().await;
-        let raw: Vec<PostalAddressSQL> = sqlx::query_as(
+        let raw: Vec<(i32, String, String, String, String, String, String, String)> = sqlx::query_as(
             "SELECT 
                 id,
                 name,
@@ -177,12 +167,35 @@ pub fn fetch_all_from_postal_address() -> Vec<PostalAddressSQL> {
             ")
             .fetch_all(&pool)
             .await.expect("REASON");
-        //raw.unwrap()
         raw
     });
     return all_rows;
 }
-
+pub fn fetch_one_from_postal_address(id: i32) -> (i32, String, String, String, String, String, String, String) {
+    let rt = tokio::runtime::Runtime::new();
+    let row = rt.expect("REASON").block_on(async {
+        let pool = setup().await;
+        sqlx::query_as::<_, (i32, String, String, String, String, String, String, String)>(
+            "SELECT 
+                id,
+                name,
+                line_1,
+                line_2,
+                line_3,
+                city,
+                state,
+                zip_code
+            FROM
+                postal_address
+            WHERE
+                id = $1
+            ")
+            .bind(id)
+            .fetch_one(&pool)
+            .await
+    });
+    return row.expect("Can't unwrap address row");
+}
 pub fn create_contact(
     first_name: &String, 
     last_name: &String, 

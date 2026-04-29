@@ -1,8 +1,9 @@
 // Go here for inspiration
 // https://www.egui.rs/#demo
 
-#[path = "my_text.rs"] mod my_text;
-#[path = "my_database.rs"] mod my_database;
+use crate::postal_address::PostalAddress;
+use crate::my_text;
+use crate::my_database;
 
 #[derive(PartialEq)]
 enum ScreenView {
@@ -23,7 +24,7 @@ pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     is_diff_screen_view: bool,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    postal_addresses: Vec<my_database::PostalAddressSQL>,
+    postal_addresses: Vec<PostalAddress>,
     #[serde(skip)] // This how you opt-out of serialization of a field
     screen_view_history: Vec<(ScreenView, i32)>,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -41,7 +42,7 @@ pub struct TemplateApp {
     #[serde(skip)] // This how you opt-out of serialization of a field
     new_achievement_variant: my_text::AchievementVariant,
     #[serde(skip)] // This how you opt-out of serialization of a field
-    new_postal_address: my_text::PostalAddress,
+    new_postal_address: PostalAddress,
     description: String,
     summary: String,
     #[serde(skip)] // This how you opt-out of serialization of a field
@@ -53,7 +54,7 @@ impl Default for TemplateApp {
         Self {
             current_screen_view: ScreenView::Primary,
             is_diff_screen_view: false,
-            postal_addresses: Vec::<my_database::PostalAddressSQL>::new(),
+            postal_addresses: Vec::<PostalAddress>::new(),
             screen_view_history: vec![(ScreenView::Primary, 0)],
             current_experience: 0,
             current_achievement: 0,
@@ -65,14 +66,15 @@ impl Default for TemplateApp {
                 end: chrono::offset::Utc::now(),
                 company: String::from(""),
                 title: String::from(""),
-                address: my_text::PostalAddress {
+                address: PostalAddress {
+                    id: 0,
                     name: String::from(""),
-                    address1: String::from(""),
-                    address2: String::from(""),
-                    address3: String::from(""),
+                    line_1: String::from(""),
+                    line_2: String::from(""),
+                    line_3: String::from(""),
                     city: String::from(""),
                     state: String::from(""),
-                    zip: String::from(""),
+                    zip_code: String::from(""),
                 },
                 achievements: Vec::<my_text::Achievement>::new(),
             },
@@ -92,14 +94,15 @@ impl Default for TemplateApp {
                 description: String::from(""),
                 defense: String::from(""),
             },
-            new_postal_address: my_text::PostalAddress {
+            new_postal_address: PostalAddress {
+                id: 0,
                 name: String::from(""),
-                address1: String::from(""),
-                address2: String::from(""),
-                address3: String::from(""),
+                line_1: String::from(""),
+                line_2: String::from(""),
+                line_3: String::from(""),
                 city: String::from(""),
                 state: String::from(""),
-                zip: String::from(""),
+                zip_code: String::from(""),
             },
             description: String::from("Begin typing"),
             summary: String::from("Begin typing"),
@@ -312,14 +315,15 @@ impl TemplateApp {
                 self.new_experience.end = chrono::offset::Utc::now();
                 self.new_experience.company = String::from("");
                 self.new_experience.title = String::from("");
-                self.new_experience.address = my_text::PostalAddress {
+                self.new_experience.address = PostalAddress {
+                    id: 0,
                     name: String::from(""),
-                    address1: String::from(""),
-                    address2: String::from(""),
-                    address3: String::from(""),
+                    line_1: String::from(""),
+                    line_2: String::from(""),
+                    line_3: String::from(""),
                     city: String::from(""),
                     state: String::from(""),
-                    zip: String::from(""),
+                    zip_code: String::from(""),
                 };
                 self.new_experience.achievements = Vec::<my_text::Achievement>::new();
             }
@@ -338,7 +342,7 @@ impl TemplateApp {
         // First Time Entering Screen View
         if self.is_diff_screen_view {
             self.is_diff_screen_view = false;
-            self.postal_addresses = my_database::fetch_all_from_postal_address();
+            self.postal_addresses = PostalAddress::all_from_db();
             for address in &self.postal_addresses {
                 println!("{}{}{}{}{}{}{}", address.name, address.line_1, address.line_2, address.line_3, address.city, address.state, address.zip_code);
             }
@@ -347,42 +351,29 @@ impl TemplateApp {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Adding Postal Address");
             // Form to add experience
+            ui.label("ID");
+            ui.label(format!("{}", self.new_postal_address.id));
             ui.label("Name");
             ui.text_edit_singleline(&mut self.new_postal_address.name);
             ui.label("Line 1");
-            ui.text_edit_singleline(&mut self.new_postal_address.address1);
+            ui.text_edit_singleline(&mut self.new_postal_address.line_1);
             ui.label("Line 2");
-            ui.text_edit_singleline(&mut self.new_postal_address.address2);
+            ui.text_edit_singleline(&mut self.new_postal_address.line_2);
             ui.label("Line 3");
-            ui.text_edit_singleline(&mut self.new_postal_address.address3);
+            ui.text_edit_singleline(&mut self.new_postal_address.line_3);
             ui.label("City");
             ui.text_edit_singleline(&mut self.new_postal_address.city);
             ui.label("State");
             ui.text_edit_singleline(&mut self.new_postal_address.state);
             ui.label("Zip Code");
-            ui.text_edit_singleline(&mut self.new_postal_address.zip);
+            ui.text_edit_singleline(&mut self.new_postal_address.zip_code);
             if ui.button("Confirm Add").clicked() {
                 self.is_diff_screen_view = true;
                 // Add it to the database
-                let _id = my_database::create_postal_address(
-                    &self.new_postal_address.name, 
-                    &self.new_postal_address.address1, 
-                    &self.new_postal_address.address2, 
-                    &self.new_postal_address.address3, 
-                    &self.new_postal_address.city, 
-                    &self.new_postal_address.state, 
-                    &self.new_postal_address.zip);
+                self.new_postal_address.send_to_db_as_new_row();
                 // Reset
                 self.current_screen_view = ScreenView::Primary;
-                self.new_postal_address = my_text::PostalAddress {
-                    name: String::from(""),
-                    address1: String::from(""),
-                    address2: String::from(""),
-                    address3: String::from(""),
-                    city: String::from(""),
-                    state: String::from(""),
-                    zip: String::from(""),
-                };
+                self.new_postal_address.reset();
             }
             if ui.button("Back").clicked() {
                 self.is_diff_screen_view = true;

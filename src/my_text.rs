@@ -1,5 +1,8 @@
 use chrono::offset::TimeZone;
 use chrono::offset::Utc;
+use crate::postal_address::PostalAddress;
+use crate::my_text;
+use crate::my_database;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
@@ -13,16 +16,7 @@ pub struct LabelPkg {
     pub tooltip: Option<String>,
     pub category: TextCategory,
 }
-#[derive(Clone, PartialEq, Debug)]
-pub struct PostalAddress {
-    pub name: String,
-    pub address1: String,
-    pub address2: String,
-    pub address3: String,
-    pub city: String,
-    pub state: String,
-    pub zip: String,
-}
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct Company {
 
@@ -130,13 +124,14 @@ pub fn get_experiences() -> Vec<Experience> {
         company: String::from("Intel"),
         title: String::from("Software Application Engineer"),
         address: PostalAddress {
+            id: 1,
             name: String::from("Jones Farm Campus"),
-            address1: String::from("2111 NE 25th Avenue"),
-            address2: String::from(""),
-            address3: String::from(""),
+            line_1: String::from("2111 NE 25th Avenue"),
+            line_2: String::from(""),
+            line_3: String::from(""),
             city: String::from("Hillsboro"),
             state: String::from("OR"),
-            zip: String::from("97124"),
+            zip_code: String::from("97124"),
         },
         achievements: intel_achievements,
     };
@@ -148,13 +143,14 @@ pub fn get_experiences() -> Vec<Experience> {
         company: String::from("The Billiard Shop"),
         title: String::from("Internet Business Manager"),
         address: PostalAddress {
+            id: 2,
             name: String::from("The Billiard Shop"),
-            address1: String::from("5627 SW Arctic Dr"),
-            address2: String::from(""),
-            address3: String::from(""),
+            line_1: String::from("5627 SW Arctic Dr"),
+            line_2: String::from(""),
+            line_3: String::from(""),
             city: String::from("Beaverton"),
             state: String::from("OR"),
-            zip: String::from("97005"),
+            zip_code: String::from("97005"),
         },
         achievements: billiard_shop_achievements,
     };
