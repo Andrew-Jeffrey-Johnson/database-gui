@@ -342,7 +342,7 @@ impl TemplateApp {
         // First Time Entering Screen View
         if self.is_diff_screen_view {
             self.is_diff_screen_view = false;
-            self.postal_addresses = PostalAddress::all_from_db();
+            self.postal_addresses = PostalAddress::fetch_all_from_db();
             for address in &self.postal_addresses {
                 println!("{}{}{}{}{}{}{}", address.name, address.line_1, address.line_2, address.line_3, address.city, address.state, address.zip_code);
             }

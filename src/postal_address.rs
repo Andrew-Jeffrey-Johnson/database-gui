@@ -1,5 +1,6 @@
 
 use crate::my_database;
+use sqlx::Row;
 
 // Organizes Postal Addresses in cache
 // Including database access
@@ -28,18 +29,36 @@ impl PostalAddress {
         }
     }
     pub fn fetch_all_from_db() -> Vec<Self> {
-        let rows = my_database::fetch_all_from_postal_address();
-        let mut addrs = Vec::<Self>::new();
+        //let rows = my_database::fetch_all_from_postal_address();
+        let expr = String::from("
+            SELECT 
+                id,
+                name,
+                line_1,
+                line_2,
+                line_3,
+                city,
+                state,
+                zip_code
+            FROM
+                postal_address
+            ORDER BY
+                id
+            OFFSET 0 ROWS
+            FETCH FIRST 100 ROWS ONLY
+            ");
+        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch_all(&expr);
+        let mut addrs = Vec::<Self>::with_capacity(rows.len());
         for row in rows {
             let addr = Self {
-                id: row.0,
-                name: row.1,
-                line_1: row.2,
-                line_2: row.3,
-                line_3: row.4,
-                city: row.5,
-                state: row.6,
-                zip_code: row.7,
+                id: row.get::<i32, usize>(0),
+                name: row.get::<String, usize>(1),
+                line_1: row.get::<String, usize>(2),
+                line_2: row.get::<String, usize>(3),
+                line_3: row.get::<String, usize>(4),
+                city: row.get::<String, usize>(5),
+                state: row.get::<String, usize>(6),
+                zip_code: row.get::<String, usize>(7),
             };
             addrs.push(addr);
         }

@@ -116,6 +116,17 @@ async fn setup() -> sqlx::Pool<sqlx::Postgres> {
     return pool;
 }
 // *********************** NEW FUNCTIONS *********************************************
+pub fn fetch_all(expr: &String) -> Vec<sqlx::postgres::PgRow> {
+    let rt = tokio::runtime::Runtime::new();
+    let all_rows = rt.expect("Couldn't create tokio block").block_on(async {
+        let pool = setup().await;
+        sqlx::query(expr)
+            .fetch_all(&pool)
+            .await
+            .expect(format!("SQL query failed: {expr}").as_str())
+    });
+    return all_rows;
+}
 pub fn create_postal_address(
     name: &String, 
     line_1: &String, 
