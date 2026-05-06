@@ -342,7 +342,7 @@ impl TemplateApp {
         // First Time Entering Screen View
         if self.is_diff_screen_view {
             self.is_diff_screen_view = false;
-            self.postal_addresses = PostalAddress::fetch_all_from_db();
+            self.postal_addresses = PostalAddress::fetch_many(0, 100);
             for address in &self.postal_addresses {
                 println!("{}{}{}{}{}{}{}", address.name, address.line_1, address.line_2, address.line_3, address.city, address.state, address.zip_code);
             }
@@ -370,7 +370,7 @@ impl TemplateApp {
             if ui.button("Confirm Add").clicked() {
                 self.is_diff_screen_view = true;
                 // Add it to the database
-                self.new_postal_address.send_to_db_as_new_row();
+                self.new_postal_address.insert_into_db();
                 // Reset
                 self.current_screen_view = ScreenView::Primary;
                 self.new_postal_address.reset();

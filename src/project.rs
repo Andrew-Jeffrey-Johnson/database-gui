@@ -1,46 +1,48 @@
 
-use chrono::offset::TimeZone;
-use chrono::offset::Utc;
 use crate::my_database;
-use crate::postal_address::PostalAddress;
+use sqlx::Row;
 
-// Cache operations for Experience
-// including database access
+// Organizes Postal Addresses in cache
+// Including database access
 #[derive(Clone, PartialEq, Debug)]
-struct Experience {
+pub struct Project {
     pub id: i32,
-    pub employing_entity_id: i32,
     pub start_timestamptz: chrono::DateTime<chrono::Utc>,
     pub end_timestamptz: chrono::DateTime<chrono::Utc>,
+    pub name: String,
+    pub url: String,
     pub postal_address_id: i32,
 }
-impl Experience {
+impl Project {
     pub fn new() -> Self {
         Self {
             id: 0,
-            employing_entity_id: 0,
             start_timestamptz: chrono::offset::Utc::now(),
             end_timestamptz: chrono::offset::Utc::now(),
+            name: String::from(""),
+            url: String::from(""),
             postal_address_id: 0,
         }
     }
     pub fn reset(&mut self) {
         self.id = 0;
-        self.employing_entity_id = 0;
         self.start_timestamptz = chrono::offset::Utc::now();
         self.end_timestamptz = chrono::offset::Utc::now();
+        self.name = String::from("");
+        self.url = String::from("");
         self.postal_address_id = 0;
     }
     pub fn fetch_many(offset: i32, max: i32) -> Vec<Self> {
         let expr = format!("
             SELECT 
                 id,
-                employing_entity_id,
                 start_timestamptz,
                 end_timestamptz,
+                name,
+                url,
                 postal_address_id,
             FROM
-                experience
+                project
             ORDER BY
                 id
             OFFSET {} ROWS
@@ -51,10 +53,11 @@ impl Experience {
         for row in rows {
             let element = Self {
                 id: row.get::<i32, usize>(0),
-                employing_entity_id: row.get::<i32, usize>(1),
-                start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
-                end_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(3),
-                postal_address_id: row.get::<i32, usize>(4),
+                start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(1),
+                end_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
+                name: row.get::<String, usize>(3),
+                url: row.get::<String, usize>(4),
+                postal_address_id: row.get::<i32, usize>(5),
             };
             new_vec.push(element);
         }
@@ -64,12 +67,13 @@ impl Experience {
         let expr = format!("
             SELECT 
                 id,
-                employing_entity_id,
                 start_timestamptz,
                 end_timestamptz,
+                name,
+                url,
                 postal_address_id,
             FROM
-                experience
+                project
             WHERE
                 id = {}
             ", id);
@@ -77,10 +81,11 @@ impl Experience {
         let row = &rows[0];
         Self {
             id: row.get::<i32, usize>(0),
-            employing_entity_id: row.get::<i32, usize>(1),
-            start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
-            end_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(3),
-            postal_address_id: row.get::<i32, usize>(4),
+            start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(1),
+            end_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
+            name: row.get::<String, usize>(3),
+            url: row.get::<String, usize>(4),
+            postal_address_id: row.get::<i32, usize>(5),
         }
     }
     // Send to db, get resulting id
@@ -88,17 +93,21 @@ impl Experience {
     pub fn insert_into_db(&mut self) -> i32 {
         let expr = format!("
             INSERT INTO postal_address 
-                (employing_entity_id, 
-                start_timestamptz, 
-                end_timestamptz, 
-                postal_address_id) 
+                (
+                start_timestamptz,
+                end_timestamptz,
+                name,
+                url,
+                postal_address_id,
+                ) 
             VALUES 
-                ('{}', '{}', '{}', '{}')
+                ('{}', '{}', '{}', '{}', '{}')
             RETURNING id
             ", 
-            self.employing_entity_id, 
             self.start_timestamptz, 
             self.end_timestamptz, 
+            self.name, 
+            self.url, 
             self.postal_address_id);
         let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
         let row = &rows[0];

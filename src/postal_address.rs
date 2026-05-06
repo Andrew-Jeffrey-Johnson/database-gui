@@ -28,9 +28,18 @@ impl PostalAddress {
             zip_code: String::from(""),
         }
     }
-    pub fn fetch_all_from_db() -> Vec<Self> {
-        //let rows = my_database::fetch_all_from_postal_address();
-        let expr = String::from("
+    pub fn reset(&mut self) {
+        self.id = 0;
+        self.name = String::from("");
+        self.line_1 = String::from("");
+        self.line_2 = String::from("");
+        self.line_3 = String::from("");
+        self.city = String::from("");
+        self.state = String::from("");
+        self.zip_code = String::from("");
+    }
+    pub fn fetch_many(offset: i32, max: i32) -> Vec<Self> {
+        let expr = format!("
             SELECT 
                 id,
                 name,
@@ -44,13 +53,13 @@ impl PostalAddress {
                 postal_address
             ORDER BY
                 id
-            OFFSET 0 ROWS
-            FETCH FIRST 100 ROWS ONLY
-            ");
-        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch_all(&expr);
-        let mut addrs = Vec::<Self>::with_capacity(rows.len());
+            OFFSET {} ROWS
+            FETCH FIRST {} ROWS ONLY
+            ", offset, max);
+        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
+        let mut new_vec = Vec::<Self>::with_capacity(rows.len());
         for row in rows {
-            let addr = Self {
+            let element = Self {
                 id: row.get::<i32, usize>(0),
                 name: row.get::<String, usize>(1),
                 line_1: row.get::<String, usize>(2),
@@ -60,45 +69,67 @@ impl PostalAddress {
                 state: row.get::<String, usize>(6),
                 zip_code: row.get::<String, usize>(7),
             };
-            addrs.push(addr);
+            new_vec.push(element);
         }
-        return addrs;
+        return new_vec;
     }
-    pub fn fetch_one_from_db_with_id(id: i32) -> Self {
-        let row = my_database::fetch_one_from_postal_address(id);
+    pub fn fetch_by_id(id: i32) -> Self {
+        let expr = format!("
+            SELECT 
+                id,
+                name,
+                line_1,
+                line_2,
+                line_3,
+                city,
+                state,
+                zip_code
+            FROM
+                postal_address
+            WHERE
+                id = {}
+            ", id);
+        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
+        let row = &rows[0];
         Self {
-            id: row.0,
-            name: row.1,
-            line_1: row.2,
-            line_2: row.3,
-            line_3: row.4,
-            city: row.5,
-            state: row.6,
-            zip_code: row.7,
+            id: row.get::<i32, usize>(0),
+            name: row.get::<String, usize>(1),
+            line_1: row.get::<String, usize>(2),
+            line_2: row.get::<String, usize>(3),
+            line_3: row.get::<String, usize>(4),
+            city: row.get::<String, usize>(5),
+            state: row.get::<String, usize>(6),
+            zip_code: row.get::<String, usize>(7),
         }
-    }
-    pub fn reset(&mut self) {
-        self.id = 0;
-        self.name = String::from("");
-        self.line_1 = String::from("");
-        self.line_2 = String::from("");
-        self.line_3 = String::from("");
-        self.city = String::from("");
-        self.state = String::from("");
-        self.zip_code = String::from("");
     }
     // Send to db, get resulting id
     // put id in self.id and return it 
-    pub fn send_to_db_as_new_row(&mut self) -> i32 {
-        self.id = my_database::create_postal_address(
-            &self.name, 
-            &self.line_1, 
-            &self.line_2, 
-            &self.line_3, 
-            &self.city, 
-            &self.state, 
-            &self.zip_code
-        );
+    pub fn insert_into_db(&mut self) -> i32 {
+        let expr = format!("
+            INSERT INTO postal_address 
+                (
+                name, 
+                line_1, 
+                line_2, 
+                line_3, 
+                city, 
+                state, 
+                zip_code
+                ) 
+            VALUES 
+                ('{}', '{}', '{}', '{}', '{}', '{}', '{}')
+            RETURNING id
+            ", 
+            self.name, 
+            self.line_1, 
+            self.line_2, 
+            self.line_3, 
+            self.city, 
+            self.state, 
+            self.zip_code);
+        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
+        let row = &rows[0];
+        self.id = row.get::<i32, usize>(0);
         self.id
     }
 }
