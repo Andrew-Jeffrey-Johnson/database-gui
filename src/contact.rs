@@ -29,7 +29,7 @@ impl Contact {
         }
     }
     pub fn reset(&mut self) {
-        self.id = 0,
+        self.id = 0;
         self.first_name = String::from("");
         self.last_name = String::from("");
         self.username = String::from("");

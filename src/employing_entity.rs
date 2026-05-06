@@ -84,7 +84,7 @@ impl EmployingEntity {
                 ('{}', '{}', {})
             RETURNING id
             ", self.name, self.url, self.headquarters_postal_address_id);
-        let rows: Ved<sqlx::postgres::PgRow> = my_database::fetch(&expr);
+        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
         let row = &rows[0];
         self.id = row.get::<i32, usize>(0);
         self.id
