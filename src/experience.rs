@@ -1,14 +1,11 @@
 
 use sqlx::Row;
-use chrono::offset::TimeZone;
-use chrono::offset::Utc;
 use crate::my_database;
-use crate::postal_address::PostalAddress;
 
 // Cache operations for Experience
 // including database access
 #[derive(Clone, PartialEq, Debug)]
-struct Experience {
+pub struct Experience {
     pub id: i32,
     pub employing_entity_id: i32,
     pub start_timestamptz: chrono::DateTime<chrono::Utc>,

@@ -133,3 +133,9 @@ impl PostalAddress {
         self.id
     }
 }
+
+impl egui::cache::ComputerMut<(i32, i32), Vec::<PostalAddress>> for PostalAddress{
+    fn compute(&mut self, range: (i32, i32)) -> Vec<Self> {
+        PostalAddress::fetch_many(range.0, range.1)
+    }
+}

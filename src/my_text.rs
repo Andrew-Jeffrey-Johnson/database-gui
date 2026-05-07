@@ -1,8 +1,3 @@
-use chrono::offset::TimeZone;
-use chrono::offset::Utc;
-use crate::postal_address::PostalAddress;
-use crate::my_text;
-use crate::my_database;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
@@ -15,148 +10,6 @@ pub struct LabelPkg {
     pub text: String,
     pub tooltip: Option<String>,
     pub category: TextCategory,
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct Company {
-
-}
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct AchievementVariant {
-    pub id: usize,
-    pub description: String,
-    pub defense: String,
-}
-#[derive(Clone, PartialEq, Debug)]
-pub struct Application {
-    pub experiences: Vec<usize>,
-
-    pub category: TextCategory,
-}
-
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct Experience {
-    pub id: i32,
-    pub start: chrono::DateTime<chrono::offset::Utc>,
-    pub end: chrono::DateTime<chrono::offset::Utc>,
-    pub company: String,
-    pub title: String,
-    pub address: PostalAddress,
-    pub achievements: Vec<Achievement>,
-}
-impl Experience {
-    pub fn get_start(&self) -> String {
-        self.start.format("%B %Y").to_string()
-    }
-    pub fn get_end(&self) -> String {
-        self.end.format("%B %Y").to_string()
-    }
-    pub fn get_company(&self) -> &String {
-        &self.company
-    }
-    pub fn get_title(&self) -> &String {
-        &self.title
-    }
-    pub fn get_address(&self) -> String {
-        format!("{}, {}", self.address.city, self.address.state)
-    }
-    pub fn get_achievements(&mut self) -> &mut Vec<Achievement> {
-        &mut self.achievements
-    }
-}
-
-
-#[derive(Clone, PartialEq, Debug)]
-pub struct Achievement {
-    pub short_description: String,
-    pub defense: String,
-    pub variants: Vec<AchievementVariant>,
-    pub in_resume: bool,
-    pub selected_variant: usize,
-}
-impl Achievement {
-    pub fn get_short_description(&self) -> &String {
-        &self.short_description
-    }
-    pub fn get_defense(&self) -> &String {
-        &self.short_description
-    }
-    pub fn get_variants(&mut self) -> &mut Vec<AchievementVariant> {
-        &mut self.variants
-    }
-}
-
-pub fn get_achievements() -> Vec<Achievement> {
-    let mut achievements: Vec<Achievement> = Vec::<Achievement>::new();
-    for i in 0..10 {
-        let text: String = format!("Achievement {}", i);
-        let mut variants: Vec<AchievementVariant> = Vec::<AchievementVariant>::new();
-        for j in 0..3 {
-            let desc: String = format!("Achievement {}, {}", i, j);
-            let variant: AchievementVariant = AchievementVariant {
-                id: j,
-                description: desc,
-                defense: String::from("This = that"),
-            };
-            variants.push(variant)
-        }
-        let achievement: Achievement = Achievement {
-            short_description: text,
-            defense: String::from("I did this."),
-            variants: variants,
-            in_resume: false,
-            selected_variant: 0,
-        };
-        achievements.push(achievement);
-    }
-    return achievements;
-}
-
-pub fn get_experiences() -> Vec<Experience> {
-    let mut experiences: Vec<Experience> = Vec::<Experience>::new();
-    let intel_achievements = get_achievements();
-    let intel = Experience {
-        id: 1,
-        start: Utc.with_ymd_and_hms(2024, 6, 24, 19, 0, 0).unwrap(),
-        end: Utc.with_ymd_and_hms(2024, 11, 15, 23, 0, 0).unwrap(),
-        company: String::from("Intel"),
-        title: String::from("Software Application Engineer"),
-        address: PostalAddress {
-            id: 1,
-            name: String::from("Jones Farm Campus"),
-            line_1: String::from("2111 NE 25th Avenue"),
-            line_2: String::from(""),
-            line_3: String::from(""),
-            city: String::from("Hillsboro"),
-            state: String::from("OR"),
-            zip_code: String::from("97124"),
-        },
-        achievements: intel_achievements,
-    };
-    let billiard_shop_achievements = get_achievements();
-    let billiard_shop = Experience {
-        id: 2,
-        start: Utc.with_ymd_and_hms(2023, 9, 21, 19, 0, 0).unwrap(),
-        end: Utc.with_ymd_and_hms(2024, 6, 8, 23, 0, 0).unwrap(),
-        company: String::from("The Billiard Shop"),
-        title: String::from("Internet Business Manager"),
-        address: PostalAddress {
-            id: 2,
-            name: String::from("The Billiard Shop"),
-            line_1: String::from("5627 SW Arctic Dr"),
-            line_2: String::from(""),
-            line_3: String::from(""),
-            city: String::from("Beaverton"),
-            state: String::from("OR"),
-            zip_code: String::from("97005"),
-        },
-        achievements: billiard_shop_achievements,
-    };
-    experiences.push(intel);
-    experiences.push(billiard_shop);
-    return experiences;
 }
 
 pub fn get_acronyms() -> std::collections::HashMap<String, String> {
@@ -273,7 +126,7 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
 
 pub fn latex_gen(
     summary: &String,
-    experiences: &Vec<Experience>,
+    //experiences: &Vec<Experience>,
     ) {
     let document_heading = String::from(r"
         \documentclass[12pt]{article}
@@ -315,35 +168,35 @@ pub fn latex_gen(
         \hrule
         \vspace{3pt}
         ");
-    let mut professional_experience_body = Vec::<String>::new();
-    for e in experiences {
-        // Only add the experience if there is at least one selected achievement
-        let mut any_selected = false;
-        for a in &e.achievements {
-            if a.in_resume {
-                any_selected = true;
-                break;
-            }
-        }
-        if !any_selected {
-            continue;
-        }
-        professional_experience_body.push(format!(r"
-            \noindent{{\textbf{{{}}} – \textit{{{}}}}}\\
-            {{{}}} 
-            \hspace*{{\fill}}
-            \textit{{{} - {}}}
-            \begin{{itemize}}
-            ", e.company, e.get_address(), e.title, e.get_start(), e.get_end()));
-        for a in &e.achievements {
-            if a.in_resume {
-                professional_experience_body.push(format!(r"
-                    \item {}
-                ", a.variants[a.selected_variant].description));
-            }
-        }
-        professional_experience_body.push(String::from(r"\end{itemize}"));
-    }
+    //let mut professional_experience_body = Vec::<String>::new();
+   // for e in experiences {
+   //     // Only add the experience if there is at least one selected achievement
+   //     let mut any_selected = false;
+   //     for a in &e.achievements {
+   //         if a.in_resume {
+   //             any_selected = true;
+   //             break;
+   //         }
+   //     }
+   //     if !any_selected {
+   //         continue;
+   //     }
+   //     professional_experience_body.push(format!(r"
+   //         \noindent{{\textbf{{{}}} – \textit{{{}}}}}\\
+   //         {{{}}} 
+   //         \hspace*{{\fill}}
+   //         \textit{{{} - {}}}
+   //         \begin{{itemize}}
+   //         ", e.company, e.get_address(), e.title, e.get_start(), e.get_end()));
+   //     for a in &e.achievements {
+   //         if a.in_resume {
+   //             professional_experience_body.push(format!(r"
+   //                 \item {}
+   //             ", a.variants[a.selected_variant].description));
+   //         }
+   //     }
+   //     professional_experience_body.push(String::from(r"\end{itemize}"));
+   // }
     let document_ending = String::from(r"
           \vspace{\sectionspacing}
           {\fontsize{14pt}{0pt}\textbf{Notable Projects}}\\
@@ -405,12 +258,12 @@ pub fn latex_gen(
     use std::io::Write;
     let f = File::create("output_resume/resume.tex");
     let _ = write!(f.expect("REASON"), 
-        "{}{}{}{}{}{}", 
+        "{}{}{}{}{}", 
         document_heading, 
         contact_section,
         summary_section,
         professional_experience_heading,
-        professional_experience_body.join(" "),
+        //professional_experience_body.join(" "),
         document_ending);
     // Generate PDF
     use std::process::Command;
