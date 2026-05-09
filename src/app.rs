@@ -18,8 +18,40 @@ use crate::postal_address::PostalAddress;
 //use crate::application_question_answer::ApplicationQuestionAnswer;
 //use crate::my_text;
 //use crate::my_database;
-use egui::cache::{ComputerMut, FrameCache};
 
+#[derive(Default)]
+pub struct App {
+    postal_address_query: Vec<PostalAddress>,
+}
+
+impl App {
+    fn reset(&mut self) {
+        self.postal_address_query = Vec::<PostalAddress>::new();
+    }
+    pub fn primary(&mut self, ui: &mut egui::Ui) {
+        ui.columns_const(|[col_1, col_2, col_3]| {
+            col_1.vertical(|col_1| {
+                if self.postal_address_query.is_empty() {
+                    self.postal_address_query = PostalAddress::fetch(0, 100);
+                }
+                for addr in &mut self.postal_address_query {
+                    let is_s = addr.selected;
+                    col_1.checkbox(&mut addr.selected, format!("Is Selected: {}", is_s));
+                    col_1.label(format!("{}, {}, {}", addr.city, addr.state, addr.zip_code));
+                }
+                //print_address(col_1, pgrows.clone(), bools.clone(), ints.clone(), strings.clone());
+            });
+            col_2.vertical(|col_2| {
+                col_2.label("Builder");
+            });
+            col_3.vertical(|col_3| {
+                col_3.label("Resume");
+            });
+        });
+    }
+}
+
+/*
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -76,17 +108,21 @@ impl eframe::App for TemplateApp {
                 egui::widgets::global_theme_preference_buttons(ui);
             });
         });
-        let min: i32 = 0;
-        let max: i32 = 100;
-        let cache = &mut ctx.memory_mut().caches;
-        let my_cache: &mut FrameCache<(i32, i32), Vec::<PostalAddress>> =
-            cache.cache("frame_cache");
-        let addresses = my_cache.compute((min, max));
-        ui.label("It runs");
-        for addr in addresses {
-            ui.label(addr.city)
-        }
-        //ui.text_edit_singleline
+        // CentralPanel should always be last
+        egui::CentralPanel::default().show(ui, |ui| {
+            // The central panel the region left after adding TopPanel's and SidePanel's
+            ui.columns_const(|[col_1, col_2, col_3]| {
+                col_1.vertical(|col_1| {
+                    col_1.label("Description");
+                });
+                col_2.vertical(|col_2| {
+                    col_2.label("Builder");
+                });
+                col_3.vertical(|col_3| {
+                    col_3.label("Resume");
+                });
+            });
+        });
     }
 }
-
+*/
