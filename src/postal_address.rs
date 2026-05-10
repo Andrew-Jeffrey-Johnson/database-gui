@@ -1,4 +1,5 @@
 
+use std::collections::HashMap;
 use crate::my_database;
 use sqlx::Row;
 
@@ -17,13 +18,13 @@ pub struct PostalAddress {
     pub zip_code: String,
 
     // Application variables
-    pub selected: bool,
+    pub is_selected: bool,
     pub priority: i32,
 }
 
 impl PostalAddress {
     // Fetch all rows where offset <= id <= offset+max
-    pub fn fetch(offset: i32, max: i32) -> Vec<Self> {
+    pub fn fetch(offset: i32, max: i32) -> HashMap<i32, Self> {
         let expr = format!("
             SELECT 
                 id,
@@ -42,7 +43,7 @@ impl PostalAddress {
             FETCH FIRST {} ROWS ONLY
             ", offset, max);
         let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
-        let mut new_vec = Vec::<Self>::with_capacity(rows.len());
+        let mut new_vec = HashMap::<i32, Self>::with_capacity(rows.len());
         for row in rows {
             let element = Self {
                 id: row.get::<i32, usize>(0),
@@ -55,7 +56,7 @@ impl PostalAddress {
                 zip_code: row.get::<String, usize>(7),
                 ..Default::default()
             };
-            new_vec.push(element);
+            new_vec.insert(element.id, element);
         }
         return new_vec;
     }
