@@ -20,8 +20,36 @@ fn main() -> eframe::Result {
         });
         // Wrap everything in a CentralPanel so we get some margins and a background color:
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            println!("Screen history: {:?}", screen_history);
+            //println!("Screen history: {:?}", screen_history);
             match job_app.requested_screen {
+                app::Screen::SelectOrAddListingHost => { 
+                    match screen_history.last().clone() {
+                        Some(app::Screen::SelectOrAddListingHost) => (),
+                        _ => screen_history.push(app::Screen::SelectOrAddListingHost),
+                    };
+                    job_app.select_or_add_listing_host(ui);
+                },
+                app::Screen::SelectOrAddListing => { 
+                    match screen_history.last().clone() {
+                        Some(app::Screen::SelectOrAddListing) => (),
+                        _ => screen_history.push(app::Screen::SelectOrAddListing),
+                    };
+                    job_app.select_or_add_listing(ui);
+                },
+                app::Screen::AddApplication => { 
+                    match screen_history.last().clone() {
+                        Some(app::Screen::AddApplication) => (),
+                        _ => screen_history.push(app::Screen::AddApplication),
+                    };
+                    job_app.add_application(ui);
+                },
+                app::Screen::SelectApplication => { 
+                    match screen_history.last().clone() {
+                        Some(app::Screen::SelectApplication) => (),
+                        _ => screen_history.push(app::Screen::SelectApplication),
+                    };
+                    job_app.view_application_query(ui);
+                },
                 app::Screen::SelectOrAddPostalAddress => { 
                     match screen_history.last().clone() {
                         Some(app::Screen::SelectOrAddPostalAddress) => (),
@@ -43,6 +71,7 @@ fn main() -> eframe::Result {
                             job_app = app::App::default();
                         },
                     };
+                    screen_history.pop();
                 },
                 app::Screen::Home => {// Go home as default
                     match screen_history.last().clone() {
