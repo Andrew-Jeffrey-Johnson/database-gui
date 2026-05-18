@@ -8,7 +8,7 @@ mod my_database;
 // All my classes
 mod postal_address;
 //mod contact;
-//mod employing_entity;
+mod employing_entity;
 mod experience;
 mod achievement;
 //mod achievement_variant;

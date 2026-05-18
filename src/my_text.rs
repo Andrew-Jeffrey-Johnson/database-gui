@@ -1,4 +1,6 @@
 
+use crate::app::App;
+
 #[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
     Jargon,
@@ -126,7 +128,7 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
 
 pub fn latex_gen(
     summary: &String,
-    //experiences: &Vec<Experience>,
+    app: &mut App,
     ) {
     let document_heading = String::from(r"
         \documentclass[12pt]{article}
@@ -168,7 +170,36 @@ pub fn latex_gen(
         \hrule
         \vspace{3pt}
         ");
-    //let mut professional_experience_body = Vec::<String>::new();
+    let mut professional_experience_body = Vec::<String>::new();
+    let exps = &app.experience_query;
+    let enti = &app.employing_entity_query;
+    let achs = &mut app.achievement_queries;
+    // Only add the experience if there is at least one selected achievement
+    for (id, experience) in exps {
+        let mut has_achievements = false;
+        for (_a_id, a) in achs.get_mut(id).unwrap() {
+            if a.is_selected {
+                has_achievements = true;
+                break;
+            }
+        }
+        if has_achievements {
+            professional_experience_body.push(format!(r"
+            \noindent{{\textbf{{{}}} 
+            {{{}}} 
+            \hspace*{{\fill}}
+            \begin{{itemize}}
+            ", experience.employing_entity_id, experience.title,));
+            for (_a_id, a) in achs.get_mut(id).unwrap() {
+                if a.is_selected {
+                    professional_experience_body.push(format!(r"
+                        \item {}
+                    ", &a.short_description));
+                }
+            }
+            professional_experience_body.push(String::from(r"\end{itemize}"));
+        }
+    }
    // for e in experiences {
    //     // Only add the experience if there is at least one selected achievement
    //     let mut any_selected = false;
@@ -258,12 +289,12 @@ pub fn latex_gen(
     use std::io::Write;
     let f = File::create("output_resume/resume.tex");
     let _ = write!(f.expect("REASON"), 
-        "{}{}{}{}{}", 
+        "{}{}{}{}{}{}", 
         document_heading, 
         contact_section,
         summary_section,
         professional_experience_heading,
-        //professional_experience_body.join(" "),
+        professional_experience_body.join(" "),
         document_ending);
     // Generate PDF
     use std::process::Command;

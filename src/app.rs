@@ -3,11 +3,12 @@
 // For inspiration and more examples, go to https://emilk.github.io/egui
 
 use chrono::TimeZone;
+use std::cmp;
 use chrono::Utc;
 use std::collections::HashMap;
 use crate::postal_address::PostalAddress;
 //use crate::contact::Contact;
-//use crate::employing_entity::EmployingEntity;
+use crate::employing_entity::EmployingEntity;
 use crate::experience::Experience;
 use crate::achievement::Achievement;
 //use crate::achievement_variant::AchievementVariant;
@@ -19,7 +20,7 @@ use crate::listing::Listing;
 use crate::application::Application;
 //use crate::application_selection::ApplicationSelection;
 //use crate::application_question_answer::ApplicationQuestionAnswer;
-//use crate::my_text;
+use crate::my_text;
 //use crate::my_database;
 
 #[derive(Default, Debug, PartialEq, Copy, Clone)]
@@ -56,6 +57,9 @@ pub struct App {
     pub listing_host_query: HashMap<i32, ListingHost>,
     pub new_listing_host: ListingHost,
     pub selected_listing_host: i32,
+    // EmployingEntity
+    pub employing_entity_query: HashMap<i32, EmployingEntity>,
+    pub new_employing_entity: EmployingEntity,
     // Experience
     pub experience_query: HashMap<i32, Experience>,
     pub new_experience: Experience,
@@ -241,11 +245,26 @@ impl App {
                 }
                 // Display all achievements from all experiences
                 for (id, experience) in &mut self.experience_query {
+                    // Employing Entity
+                    if !self.employing_entity_query.contains_key(&experience.employing_entity_id) {
+                        // Get a bunch at a time. Not just one at a time
+                        let new_query = EmployingEntity::fetch(
+                            cmp::max(experience.employing_entity_id-10, 0), // Lower cap = 0
+                            experience.employing_entity_id+10 // no upper cap
+                        );
+                        self.employing_entity_query.extend(new_query.into_iter());
+                    }
+                    let employing_entity = self.employing_entity_query.get(&experience.employing_entity_id);
+                    // Achievements
                     if !self.achievement_queries.contains_key(id) {
                         let new_hashmap = Achievement::fetch_using_experience(0, 100, *id);
                         self.achievement_queries.insert(*id, new_hashmap);
                     }
                     col_2.label(format!("[ID: {}] Title: {}", *id, experience.title));
+                    match employing_entity {
+                        None => col_2.label("No Employing Entity Found"),
+                        Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
+                    };
                     for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
                         col_2.checkbox(&mut a.is_selected, &a.short_description);
                     }
@@ -255,9 +274,29 @@ impl App {
             // Resume preview
             col_3.vertical(|col_3| {
                 col_3.label("Resume Preview TODO");
+                for (id, experience) in &mut self.experience_query {
+                    let mut has_achievements = false;
+                    for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
+                        if a.is_selected {
+                            has_achievements = true;
+                            break;
+                        }
+                    }
+                    if has_achievements {
+                        col_3.label(format!("{}, {}", experience.employing_entity_id, experience.title));
+                        for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
+                            if a.is_selected {
+                                col_3.label(&a.short_description);
+                            }
+                        }
+                    }
+                }
             });
             // Done
             col_4.vertical(|col_4| {
+                if col_4.button("Generate PDF").clicked() {
+                    my_text::latex_gen(&"This is a summary".to_string(), self);
+                }
                 if col_4.button("Submit").clicked() {
                     self.new_application.submitted_timestamptz = chrono::offset::Utc::now();
                     self.new_application.listing_id = self.selected_listing;
