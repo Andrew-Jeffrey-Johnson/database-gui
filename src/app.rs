@@ -31,6 +31,7 @@ pub enum Screen {
     SelectOrAddPostalAddress,
     SelectApplication,
     AddApplication,
+    AddAchievement,
     SelectOrAddListing,
     SelectOrAddListingHost,
 }
@@ -63,6 +64,7 @@ pub struct App {
     // Experience
     pub experience_query: HashMap<i32, Experience>,
     pub new_experience: Experience,
+    pub currently_selected_experience: i32,
     // Achievement
     // hashmap of hashmaps indexed by experience_id
     pub achievement_queries: HashMap<i32, HashMap<i32, Achievement>>,
@@ -222,6 +224,23 @@ impl App {
         });
     }
 
+    pub fn add_achievement(&mut self, ui: &mut egui::Ui) {
+        ui.label(format!("Currently Selected Experience: {}", self.currently_selected_experience));
+        ui.label("New Achievement");
+        ui.label("Short Description");
+        ui.text_edit_singleline(&mut self.new_achievement.short_description);
+        ui.label("Defense");
+        ui.text_edit_singleline(&mut self.new_achievement.defense);
+        if ui.button("Confirm").clicked() {
+            self.new_achievement.experience_id = self.currently_selected_experience;
+            self.new_achievement.insert_into_db();
+            self.new_achievement = Default::default();
+            self.requested_screen = Screen::Back;
+        }
+        if ui.button("Cancel").clicked() {
+            self.requested_screen = Screen::Back;
+        }
+    }
     pub fn add_application(&mut self, ui: &mut egui::Ui) {
         ui.columns_const(|[col_1, col_2, col_3, col_4]| {
             // application itself
@@ -268,6 +287,13 @@ impl App {
                     for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
                         col_2.checkbox(&mut a.is_selected, &a.short_description);
                     }
+                    if col_2.button("Add Achievement").clicked() {
+                        self.currently_selected_experience = *id;
+                        self.requested_screen = Screen::AddAchievement;
+                        self.employing_entity_query = Default::default();
+                        self.achievement_queries = Default::default();
+                        return;
+                    }
                 }
                 col_2.label("Projects");
             });
@@ -276,10 +302,13 @@ impl App {
                 col_3.label("Resume Preview TODO");
                 for (id, experience) in &mut self.experience_query {
                     let mut has_achievements = false;
-                    for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
-                        if a.is_selected {
-                            has_achievements = true;
-                            break;
+                    let maybe_achievements = self.achievement_queries.get_mut(id);
+                    if let Some(achievements) = maybe_achievements {
+                        for (_a_id, a) in achievements {
+                            if a.is_selected {
+                                has_achievements = true;
+                                break;
+                            }
                         }
                     }
                     if has_achievements {

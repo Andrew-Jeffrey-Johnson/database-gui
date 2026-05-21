@@ -43,6 +43,13 @@ fn main() -> eframe::Result {
                     };
                     job_app.add_application(ui);
                 },
+                app::Screen::AddAchievement => { 
+                    match screen_history.last().clone() {
+                        Some(app::Screen::AddAchievement) => (),
+                        _ => screen_history.push(app::Screen::AddAchievement),
+                    };
+                    job_app.add_achievement(ui);
+                },
                 app::Screen::SelectApplication => { 
                     match screen_history.last().clone() {
                         Some(app::Screen::SelectApplication) => (),
