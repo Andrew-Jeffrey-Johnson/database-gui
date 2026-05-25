@@ -131,7 +131,9 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
 pub fn latex_gen(
     summary: &String,
     app: &mut App,
-    ) {
+    )
+    -> String
+    {
     let document_heading = String::from(r"
         \documentclass[12pt]{article}
         \usepackage[margin=0.5in]{geometry}
@@ -323,14 +325,16 @@ pub fn latex_gen(
     use std::fs::File;
     use std::io::Write;
     let f = File::create("output_resume/resume.tex");
-    let _ = write!(f.expect("REASON"), 
+    let full_latex_resume = format!(
         "{}{}{}{}{}{}", 
         document_heading, 
         contact_section,
         summary_section,
         professional_experience_heading,
         professional_experience_body.join(" "),
-        document_ending);
+        document_ending
+    );
+    let _ = write!(f.expect("REASON"), "{}", full_latex_resume);
     // Generate PDF
     use std::process::Command;
     let result = Command::new("pdflatex")
@@ -342,4 +346,5 @@ pub fn latex_gen(
         Ok(output) => println!("Success: {}", output.status),
         Err(e) => eprintln!("Failed to run command: {}", e),
     }
+    return full_latex_resume;
 }

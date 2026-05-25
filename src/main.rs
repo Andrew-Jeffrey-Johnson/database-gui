@@ -57,13 +57,6 @@ fn main() -> eframe::Result {
                     }
 
                 },
-                app::Screen::SelectOrAddListingHost => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::SelectOrAddListingHost) => (),
-                        _ => screen_history.push(app::Screen::SelectOrAddListingHost),
-                    };
-                    job_app.select_or_add_listing_host(ui);
-                },
                 app::Screen::SelectOrAddListing => { 
                     match screen_history.last().clone() {
                         Some(app::Screen::SelectOrAddListing) => (),

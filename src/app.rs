@@ -136,90 +136,116 @@ impl App {
         });
     }
 
-    pub fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
-        ui.columns_const(|[col_1, col_2]| {
-            col_1.vertical(|col_1| {
-                col_1.label("Select Listing Host");
-                if self.listing_host_query.is_empty() {
-                    self.listing_host_query = ListingHost::fetch(0, 100);
+    fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
+        egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+            if self.new_listing_host.id != 0 {
+                if let Some(host) = self.listing_host_query.get(&self.new_listing_host.id) {
+                    ui.label(&host.name);
+                    ui.label(&host.url);
                 }
-                for (id, listing_host) in &mut self.listing_host_query {
-                    col_1.radio_value(
-                        &mut self.selected_listing, 
-                        *id,
-                        format!("[id: {}]", id)
-                    );
-                    col_1.label(format!("{}, {}", 
-                        listing_host.name, 
-                        listing_host.url));
+                else {
+                    ui.label("Oops. Something went wrong.");
                 }
-                if col_1.button("Confirm Selection").clicked() {
-                    self.requested_screen = Screen::Back; // Go back to previous screen
+                if ui.button("Change Listing Host").clicked() {
+                    self.new_listing_host.id = 0;
                 }
-            });
-            col_2.vertical(|col_2| {
-                col_2.label("Add Listing Host");
-                col_2.label("Name:");
-                col_2.text_edit_multiline(&mut self.new_listing_host.name);
-                col_2.label("URL:");
-                col_2.text_edit_multiline(&mut self.new_listing_host.url);
-                if col_2.button("Confirm Add").clicked() {
-                    // Insert into databse
-                    self.new_listing_host.insert_into_db();
-                    self.selected_listing_host = self.new_listing_host.id;
-                    self.requested_screen = Screen::Back; // Go back to previous screen
-                }
-            });
+            }
+            else {
+                ui.columns_const(|[col_1, col_2]| {
+                    col_1.vertical(|col_1| {
+                        col_1.label("Select Listing Host");
+                        if self.listing_host_query.is_empty() {
+                            self.listing_host_query = ListingHost::fetch(0, 100);
+                        }
+                        for (id, listing_host) in &mut self.listing_host_query {
+                            col_1.radio_value(
+                                &mut self.new_listing_host.id, 
+                                *id,
+                                format!("[id: {}]", id)
+                            );
+                            col_1.label(format!("{}, {}", 
+                                listing_host.name, 
+                                listing_host.url));
+                        }
+                    });
+                    col_2.vertical(|col_2| {
+                        col_2.label("Add Listing Host");
+                        col_2.label("Name:");
+                        col_2.text_edit_multiline(&mut self.new_listing_host.name);
+                        col_2.label("URL:");
+                        col_2.text_edit_multiline(&mut self.new_listing_host.url);
+                        if col_2.button("Confirm Add").clicked() {
+                            // Insert into databse
+                            self.new_listing_host.insert_into_db();
+                            self.selected_listing_host = self.new_listing_host.id;
+                        }
+                    });
+                });
+            }
         });
     }
 
     pub fn select_or_add_listing(&mut self, ui: &mut egui::Ui) {
-        ui.columns_const(|[col_1, col_2]| {
-            col_1.vertical(|col_1| {
-                col_1.label("Select Listing");
-                if self.listing_query.is_empty() {
-                    self.listing_query = Listing::fetch(0, 100);
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+                if self.new_listing.id != 0 {
+                    if let Some(listing) = self.listing_query.get(&self.new_listing.id) {
+                        ui.label(format!("{}...", &listing.description[0..std::cmp::min(50, listing.description.len())]));
+                        ui.label(format!("{}...", &listing.url[0..std::cmp::min(20, listing.url.len())]));
+                    }
+                    else {
+                        ui.label("Oops. Something went wrong.");
+                    }
+                    if ui.button("Change Listing").clicked() {
+                        self.new_listing.id = 0;
+                    }
                 }
-                for (id, listing) in &mut self.listing_query {
-                    col_1.radio_value(
-                        &mut self.selected_listing, 
-                        *id,
-                        format!("[id: {}]", id)
-                    );
-                    col_1.label(format!("{}, {}, {}, {}", 
-                        listing.listing_host_id, 
-                        listing.description, 
-                        listing.posted_timestamptz,
-                        listing.recruiter_contact_id));
-                }
-                if col_1.button("Confirm Selection").clicked() {
-                    self.requested_screen = Screen::Back; // Go back to previous screen
-                }
-            });
-            col_2.vertical(|col_2| {
-                col_2.label("Add Listing");
-                col_2.label("Listing Host");
-                if col_2.button("Select or Add Listing Host").clicked() {
-                    self.requested_screen = Screen::SelectOrAddListingHost;
-                }
-                col_2.label("Description:");
-                col_2.text_edit_multiline(&mut self.new_listing.description);
-                col_2.label("Posted Date:");
-                Self::date(col_2, &mut self.posted_year, &mut self.posted_month, &mut self.posted_day);
-                col_2.label("Recruiter Contact (NOT IMPLEMENTED YET)");
-                if col_2.button("Confirm Add").clicked() {
-                    // Insert into databse
-                    self.new_listing.posted_timestamptz = Utc.with_ymd_and_hms(
-                        self.posted_year,
-                        self.posted_month,
-                        self.posted_day,
-                        0,
-                        0,
-                        0
-                    ).unwrap();
-                    self.new_listing.insert_into_db();
-                    self.selected_listing = self.new_listing.id;
-                    self.requested_screen = Screen::Back; // Go back to previous screen
+                else {
+                    ui.columns_const(|[col_1, col_2]| {
+                        col_1.vertical(|col_1| {
+                            col_1.label("Select Listing");
+                            if self.listing_query.is_empty() {
+                                self.listing_query = Listing::fetch(0, 100);
+                            }
+                            for (id, listing) in &mut self.listing_query {
+                                col_1.radio_value(
+                                    &mut self.new_listing.id, 
+                                    *id,
+                                    format!("[id: {}]", id)
+                                );
+                                col_1.label(format!("{}, {}, {}, {}", 
+                                    listing.listing_host_id, 
+                                    &listing.description[0..std::cmp::min(50, listing.description.len())], 
+                                    listing.posted_timestamptz,
+                                    listing.recruiter_contact_id));
+                            }
+                        });
+                        col_2.vertical(|col_2| {
+                            col_2.label("Add Listing");
+                            self.select_or_add_listing_host(col_2);
+                            col_2.label("Description:");
+                            col_2.text_edit_multiline(&mut self.new_listing.description);
+                            col_2.label("URL:");
+                            col_2.text_edit_multiline(&mut self.new_listing.url);
+                            col_2.label("Posted Date:");
+                            Self::date(col_2, &mut self.posted_year, &mut self.posted_month, &mut self.posted_day);
+                            col_2.label("Recruiter Contact (NOT IMPLEMENTED YET)");
+                            if col_2.button("Confirm Add").clicked() {
+                                // Insert into database
+                                self.new_listing.description = self.new_listing.description.replace("'", "''");
+                                self.new_listing.posted_timestamptz = Utc.with_ymd_and_hms(
+                                    self.posted_year,
+                                    self.posted_month,
+                                    self.posted_day,
+                                    0,
+                                    0,
+                                    0
+                                ).unwrap();
+                                self.new_listing.insert_into_db();
+                                self.selected_listing = self.new_listing.id;
+                            }
+                        });
+                    });
                 }
             });
         });
@@ -247,114 +273,117 @@ impl App {
         }
     }
     pub fn add_application(&mut self, ui: &mut egui::Ui) {
-        ui.columns_const(|[col_1, col_2, col_3, col_4]| {
-            // application itself
-            col_1.vertical(|col_1| {
-                col_1.label("New Application");
-                if !self.new_application.is_started {
-                    self.new_application.start_timestamptz = chrono::offset::Utc::now();
-                    self.new_application.is_started = true;
-                }
-                col_1.label(format!("Started: {}", self.new_application.start_timestamptz));
-                col_1.label(format!("Listing ID: {}", self.selected_listing));
-                if col_1.button("Select or Add Listing").clicked() {
-                    self.requested_screen = Screen::SelectOrAddListing;
-                }
-            });
-            // achievements and project highlights
-            col_2.vertical(|col_2| {
-                col_2.label("Experiences");
-                if col_2.button("Add Experience").clicked() {
-                    self.requested_screen = Screen::AddExperience;
-                    return;
-                }
-                if self.experience_query.is_empty() {
-                    self.experience_query = Experience::fetch(0, 100);
-                }
-                // Display all achievements from all experiences
-                for (id, experience) in &mut self.experience_query {
-                    // Employing Entity
-                    if !self.employing_entity_query.contains_key(&experience.employing_entity_id) {
-                        // Get a bunch at a time. Not just one at a time
-                        let new_query = EmployingEntity::fetch(
-                            cmp::max(experience.employing_entity_id-10, 0), // Lower cap = 0
-                            experience.employing_entity_id+10 // no upper cap
-                        );
-                        self.employing_entity_query.extend(new_query.into_iter());
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.columns_const(|[col_1, col_2, col_3, col_4]| {
+                // application itself
+                col_1.vertical(|col_1| {
+                    col_1.label("New Application");
+                    if !self.new_application.is_started {
+                        self.new_application.start_timestamptz = chrono::offset::Utc::now();
+                        self.new_application.is_started = true;
                     }
-                    let employing_entity = self.employing_entity_query.get(&experience.employing_entity_id);
-                    // Achievements
-                    if !self.achievement_queries.contains_key(id) {
-                        let new_hashmap = Achievement::fetch_using_experience(0, 100, *id);
-                        self.achievement_queries.insert(*id, new_hashmap);
-                    }
-                    col_2.label(format!("[ID: {}] Title: {}", *id, experience.title));
-                    match employing_entity {
-                        None => col_2.label("No Employing Entity Found"),
-                        Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
-                    };
-                    for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
-                        col_2.checkbox(&mut a.is_selected, &a.short_description);
-                    }
-                    if col_2.button("Add Achievement").clicked() {
-                        self.currently_selected_experience = *id;
-                        self.requested_screen = Screen::AddAchievement;
-                        self.employing_entity_query = Default::default();
-                        self.achievement_queries = Default::default();
+                    col_1.label(format!("Started: {}", self.new_application.start_timestamptz));
+                    col_1.label("Select or Add Listing");
+                    self.select_or_add_listing(col_1);
+                });
+                // achievements and project highlights
+                col_2.vertical(|col_2| {
+                    col_2.label("Experiences");
+                    if col_2.button("Add Experience").clicked() {
+                        self.requested_screen = Screen::AddExperience;
                         return;
                     }
-                }
-                col_2.label("Projects");
-            });
-            // Resume preview
-            col_3.vertical(|col_3| {
-                col_3.label("Resume Preview TODO");
-                for (id, experience) in &mut self.experience_query {
-                    let mut has_achievements = false;
-                    let maybe_achievements = self.achievement_queries.get_mut(id);
-                    if let Some(achievements) = maybe_achievements {
-                        for (_a_id, a) in achievements {
-                            if a.is_selected {
-                                has_achievements = true;
-                                break;
-                            }
-                        }
+                    if self.experience_query.is_empty() {
+                        self.experience_query = Experience::fetch(0, 100);
                     }
-                    if has_achievements {
-                        col_3.label(format!("{}, {}", experience.employing_entity_id, experience.title));
+                    // Display all achievements from all experiences
+                    for (id, experience) in &mut self.experience_query {
+                        // Employing Entity
+                        if !self.employing_entity_query.contains_key(&experience.employing_entity_id) {
+                            // Get a bunch at a time. Not just one at a time
+                            let new_query = EmployingEntity::fetch(
+                                cmp::max(experience.employing_entity_id-10, 0), // Lower cap = 0
+                                experience.employing_entity_id+10 // no upper cap
+                            );
+                            self.employing_entity_query.extend(new_query.into_iter());
+                        }
+                        let employing_entity = self.employing_entity_query.get(&experience.employing_entity_id);
+                        // Achievements
+                        if !self.achievement_queries.contains_key(id) {
+                            let new_hashmap = Achievement::fetch_using_experience(0, 100, *id);
+                            self.achievement_queries.insert(*id, new_hashmap);
+                        }
+                        col_2.label(format!("[ID: {}] Title: {}", *id, experience.title));
+                        match employing_entity {
+                            None => col_2.label("No Employing Entity Found"),
+                            Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
+                        };
                         for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
-                            if a.is_selected {
-                                col_3.label(&a.short_description);
+                            col_2.checkbox(&mut a.is_selected, &a.short_description);
+                        }
+                        if col_2.button("Add Achievement").clicked() {
+                            self.currently_selected_experience = *id;
+                            self.requested_screen = Screen::AddAchievement;
+                            self.employing_entity_query = Default::default();
+                            self.achievement_queries = Default::default();
+                            return;
+                        }
+                    }
+                    col_2.label("Projects");
+                });
+                // Resume preview
+                col_3.vertical(|col_3| {
+                    col_3.label("Resume Preview TODO");
+                    for (id, experience) in &mut self.experience_query {
+                        let mut has_achievements = false;
+                        let maybe_achievements = self.achievement_queries.get_mut(id);
+                        if let Some(achievements) = maybe_achievements {
+                            for (_a_id, a) in achievements {
+                                if a.is_selected {
+                                    has_achievements = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if has_achievements {
+                            col_3.label(format!("{}, {}", experience.employing_entity_id, experience.title));
+                            for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
+                                if a.is_selected {
+                                    col_3.label(&a.short_description);
+                                }
                             }
                         }
                     }
-                }
-            });
-            // Done
-            col_4.vertical(|col_4| {
-                if col_4.button("Generate PDF").clicked() {
-                    let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
-experience in software engineering, security, web development, and databases.");
-                    my_text::latex_gen(&summary, self);
-                }
-                if col_4.button("Submit").clicked() {
-                    self.new_application.submitted_timestamptz = chrono::offset::Utc::now();
-                    self.new_application.listing_id = self.selected_listing;
-                    // Insert into databse
-                    self.new_application.insert_into_db();
-                    self.selected_application = self.new_application.id;
-                    // Reset all but selected application id
-                    *self = App{
-                        selected_application: self.selected_application, 
-                        ..Default::default()
-                    };
-                    self.requested_screen = Screen::Back; // Go back to previous screen
-                }
-                if col_4.button("Cancel").clicked() {
-                    // Reset everything
-                    *self = Default::default();
-                    self.requested_screen = Screen::Back; // Go back to previous screen
-                }
+                });
+                // Done
+                col_4.vertical(|col_4| {
+                    if col_4.button("Generate PDF").clicked() {
+                        let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
+    experience in software engineering, security, web development, and databases.");
+                        self.new_application.resume = my_text::latex_gen(&summary, self);
+                    }
+                    if col_4.button("Submit").clicked() {
+                        let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
+    experience in software engineering, security, web development, and databases.");
+                        self.new_application.resume = my_text::latex_gen(&summary, self);
+                        self.new_application.submitted_timestamptz = chrono::offset::Utc::now();
+                        self.new_application.listing_id = self.selected_listing;
+                        // Insert into databse
+                        self.new_application.insert_into_db();
+                        self.selected_application = self.new_application.id;
+                        // Reset all but selected application id
+                        *self = App{
+                            selected_application: self.selected_application, 
+                            ..Default::default()
+                        };
+                        self.requested_screen = Screen::Back; // Go back to previous screen
+                    }
+                    if col_4.button("Cancel").clicked() {
+                        // Reset everything
+                        *self = Default::default();
+                        self.requested_screen = Screen::Back; // Go back to previous screen
+                    }
+                });
             });
         });
     }

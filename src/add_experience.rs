@@ -240,7 +240,7 @@ pub fn new_experience
             e.insert_into_db();
             is_done = true;
         }
-        if ui.button("Cancel").clicked() {
+        else if ui.button("Cancel").clicked() {
             is_done = true;
         }
         else {
