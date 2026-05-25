@@ -274,7 +274,7 @@ impl App {
     }
     pub fn add_application(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.columns_const(|[col_1, col_2, col_3, col_4]| {
+            ui.columns_const(|[col_1, col_2, col_3]| {
                 // application itself
                 col_1.vertical(|col_1| {
                     col_1.label("New Application");
@@ -331,43 +331,19 @@ impl App {
                     }
                     col_2.label("Projects");
                 });
-                // Resume preview
-                col_3.vertical(|col_3| {
-                    col_3.label("Resume Preview TODO");
-                    for (id, experience) in &mut self.experience_query {
-                        let mut has_achievements = false;
-                        let maybe_achievements = self.achievement_queries.get_mut(id);
-                        if let Some(achievements) = maybe_achievements {
-                            for (_a_id, a) in achievements {
-                                if a.is_selected {
-                                    has_achievements = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if has_achievements {
-                            col_3.label(format!("{}, {}", experience.employing_entity_id, experience.title));
-                            for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
-                                if a.is_selected {
-                                    col_3.label(&a.short_description);
-                                }
-                            }
-                        }
-                    }
-                });
                 // Done
-                col_4.vertical(|col_4| {
-                    if col_4.button("Generate PDF").clicked() {
+                col_3.vertical(|col_3| {
+                    if col_3.button("Generate PDF").clicked() {
                         let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
     experience in software engineering, security, web development, and databases.");
                         self.new_application.resume = my_text::latex_gen(&summary, self);
                     }
-                    if col_4.button("Submit").clicked() {
+                    if col_3.button("Submit").clicked() {
                         let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
     experience in software engineering, security, web development, and databases.");
                         self.new_application.resume = my_text::latex_gen(&summary, self);
                         self.new_application.submitted_timestamptz = chrono::offset::Utc::now();
-                        self.new_application.listing_id = self.selected_listing;
+                        self.new_application.listing_id = self.new_listing.id;
                         // Insert into databse
                         self.new_application.insert_into_db();
                         self.selected_application = self.new_application.id;
@@ -378,7 +354,7 @@ impl App {
                         };
                         self.requested_screen = Screen::Back; // Go back to previous screen
                     }
-                    if col_4.button("Cancel").clicked() {
+                    if col_3.button("Cancel").clicked() {
                         // Reset everything
                         *self = Default::default();
                         self.requested_screen = Screen::Back; // Go back to previous screen
