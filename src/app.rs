@@ -34,6 +34,7 @@ pub enum Screen {
     AddAchievement,
     SelectOrAddListing,
     SelectOrAddListingHost,
+    AddExperience,
 }
 #[derive(Default)]
 pub struct App {
@@ -91,18 +92,18 @@ impl App {
         egui::ComboBox::from_label("Month")
             .selected_text(format!("{:?}", month))
             .show_ui(ui, |ui| {
-                ui.selectable_value(month, 0, "January");
-                ui.selectable_value(month, 1, "February");
-                ui.selectable_value(month, 2, "March");
-                ui.selectable_value(month, 3, "April");
-                ui.selectable_value(month, 4, "May");
-                ui.selectable_value(month, 5, "June");
-                ui.selectable_value(month, 6, "July");
-                ui.selectable_value(month, 7, "August");
-                ui.selectable_value(month, 8, "September");
-                ui.selectable_value(month, 9, "October");
-                ui.selectable_value(month, 10, "November");
-                ui.selectable_value(month, 11, "December");
+                ui.selectable_value(month, 1, "January");
+                ui.selectable_value(month, 2, "February");
+                ui.selectable_value(month, 3, "March");
+                ui.selectable_value(month, 4, "April");
+                ui.selectable_value(month, 5, "May");
+                ui.selectable_value(month, 6, "June");
+                ui.selectable_value(month, 7, "July");
+                ui.selectable_value(month, 8, "August");
+                ui.selectable_value(month, 9, "September");
+                ui.selectable_value(month, 10, "October");
+                ui.selectable_value(month, 11, "November");
+                ui.selectable_value(month, 12, "December");
             }
         );
         ui.label("Day:");
@@ -232,6 +233,10 @@ impl App {
         ui.label("Defense");
         ui.text_edit_singleline(&mut self.new_achievement.defense);
         if ui.button("Confirm").clicked() {
+            self.new_achievement.short_description = self.new_achievement.short_description.replace("'", "''");
+            self.new_achievement.defense = self.new_achievement.defense.replace("'", "''");
+            self.new_achievement.short_description = self.new_achievement.short_description.replace("&", r"\&");
+            self.new_achievement.defense = self.new_achievement.defense.replace("&", r"\&");
             self.new_achievement.experience_id = self.currently_selected_experience;
             self.new_achievement.insert_into_db();
             self.new_achievement = Default::default();
@@ -259,6 +264,10 @@ impl App {
             // achievements and project highlights
             col_2.vertical(|col_2| {
                 col_2.label("Experiences");
+                if col_2.button("Add Experience").clicked() {
+                    self.requested_screen = Screen::AddExperience;
+                    return;
+                }
                 if self.experience_query.is_empty() {
                     self.experience_query = Experience::fetch(0, 100);
                 }
@@ -324,7 +333,9 @@ impl App {
             // Done
             col_4.vertical(|col_4| {
                 if col_4.button("Generate PDF").clicked() {
-                    my_text::latex_gen(&"This is a summary".to_string(), self);
+                    let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
+experience in software engineering, security, web development, and databases.");
+                    my_text::latex_gen(&summary, self);
                 }
                 if col_4.button("Submit").clicked() {
                     self.new_application.submitted_timestamptz = chrono::offset::Utc::now();

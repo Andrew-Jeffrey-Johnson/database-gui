@@ -12,6 +12,7 @@ pub struct Application {
     pub start_timestamptz: chrono::DateTime<chrono::Utc>,
     pub submitted_timestamptz: chrono::DateTime<chrono::Utc>,
     pub listing_id: i32,
+    pub resume: String,
     // App state
     pub is_started: bool,
 }
@@ -22,7 +23,8 @@ impl Application {
                 id,
                 start_timestamptz,
                 submitted_timestamptz,
-                listing_id
+                listing_id,
+                resume
             FROM
                 application
             ORDER BY
@@ -38,6 +40,7 @@ impl Application {
                 start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(1),
                 submitted_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
                 listing_id: row.get::<i32, usize>(3),
+                resume: row.get::<String, usize>(3),
                 ..Default::default()
             };
             new_vec.insert(element.id, element);
@@ -51,15 +54,18 @@ impl Application {
                 (
                 start_timestamptz,
                 submitted_timestamptz,
-                listing_id
+                listing_id,
+                resume
                 ) 
             VALUES 
-                ('{}', '{}', '{}')
+                ('{}', '{}', '{}', '{}')
             RETURNING id
             ", 
             self.start_timestamptz, 
             self.submitted_timestamptz, 
-            self.listing_id);
+            self.listing_id,
+            self.resume,
+        );
         let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
         let row = &rows[0];
         self.id = row.get::<i32, usize>(0);

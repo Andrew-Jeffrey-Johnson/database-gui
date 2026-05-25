@@ -2,21 +2,22 @@
 
 pub mod app;
 //pub use app::TemplateApp;
-mod my_text;
-mod my_database;
+pub mod my_text;
+pub mod my_database;
 
 // All my classes
-mod postal_address;
+pub mod postal_address;
 //mod contact;
-mod employing_entity;
-mod experience;
-mod achievement;
+pub mod employing_entity;
+pub mod experience;
+pub mod achievement;
 //mod achievement_variant;
 //mod project;
 //mod project_highlight;
 //mod project_highlight_variant;
-mod listing_host;
-mod listing;
-mod application;
+pub mod listing_host;
+pub mod listing;
+pub mod application;
 //mod application_selection;
 //mod application_question_answer;
+pub mod add_experience;

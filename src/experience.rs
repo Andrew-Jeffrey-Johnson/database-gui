@@ -49,7 +49,7 @@ impl Experience {
     // Send to db, get resulting id in self.id
     pub fn insert_into_db(&mut self) {
         let expr = format!("
-            INSERT INTO postal_address 
+            INSERT INTO experience 
                 (
                 employing_entity_id, 
                 start_timestamptz, 

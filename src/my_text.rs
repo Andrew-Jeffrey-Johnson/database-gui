@@ -1,5 +1,7 @@
 
 use crate::app::App;
+use crate::postal_address::PostalAddress;
+use std::cmp;
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum TextCategory {
@@ -184,12 +186,45 @@ pub fn latex_gen(
             }
         }
         if has_achievements {
-            professional_experience_body.push(format!(r"
-            \noindent{{\textbf{{{}}} 
-            {{{}}} 
-            \hspace*{{\fill}}
-            \begin{{itemize}}
-            ", experience.employing_entity_id, experience.title,));
+            if let Some(ee) = enti.get(&experience.employing_entity_id) {
+                let pq = PostalAddress::fetch(cmp::max(0,experience.postal_address_id-1), 1);
+                if let Some(a) = pq.get(&experience.postal_address_id) {
+                    professional_experience_body.push(format!(r"
+                        \noindent{{\textbf{{{}}} – \textit{{{}}}}}\\
+                        {{{}}} 
+                        \hspace*{{\fill}}
+                        \textit{{{} - {}}}
+                        \begin{{itemize}}
+                        ", 
+                        ee.name, 
+                        format!("{}, {}", a.city, a.state),
+                        experience.title, 
+                        experience.start_timestamptz.format("%B %Y"),
+                        experience.end_timestamptz.format("%B %Y"),
+                    ));
+                }
+                else {
+                    professional_experience_body.push(format!(r"
+                        \noindent{{\textbf{{{}}}}}\\
+                        {{{}}} 
+                        \hspace*{{\fill}}
+                        \textit{{{} - {}}}
+                        \begin{{itemize}}
+                        ", 
+                        ee.name, 
+                        experience.title, 
+                        experience.start_timestamptz.format("%B %Y"),
+                        experience.end_timestamptz.format("%B %Y"),
+                    ));
+                }
+            }
+            else {
+                professional_experience_body.push(format!(r"
+                {{{}}} 
+                \hspace*{{\fill}}
+                \begin{{itemize}}
+                ", experience.title,));
+            }
             for (_a_id, a) in achs.get_mut(id).unwrap() {
                 if a.is_selected {
                     professional_experience_body.push(format!(r"
