@@ -3,6 +3,7 @@ use job_application_helper::add_experience;
 use job_application_helper::experience::Experience;
 use job_application_helper::postal_address::PostalAddress;
 use job_application_helper::employing_entity::EmployingEntity;
+use job_application_helper::application_question_answer::ApplicationQuestionAnswer;
 use std::collections::HashMap;
 
 fn main() -> eframe::Result {
@@ -20,6 +21,7 @@ fn main() -> eframe::Result {
     let mut eep = PostalAddress::default();
     let mut eeq = HashMap::<i32, EmployingEntity>::default();
     let mut pq = HashMap::<i32, PostalAddress>::default();
+    let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
     let mut screen_history = vec![app::Screen::Home];
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
@@ -69,7 +71,10 @@ fn main() -> eframe::Result {
                         Some(app::Screen::AddApplication) => (),
                         _ => screen_history.push(app::Screen::AddApplication),
                     };
-                    job_app.add_application(ui);
+                    job_app.add_application(
+                        ui,
+                        &mut question_answer_vec,
+                    );
                 },
                 app::Screen::AddAchievement => { 
                     match screen_history.last().clone() {

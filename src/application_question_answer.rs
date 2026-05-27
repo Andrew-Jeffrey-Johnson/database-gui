@@ -1,10 +1,11 @@
 
 use crate::my_database;
 use sqlx::Row;
+use std::collections::HashMap;
 
 // Organizes Postal Addresses in cache
 // Including database access
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Default)]
 pub struct ApplicationQuestionAnswer {
     pub id: i32,
     pub application_id: i32,
@@ -12,27 +13,13 @@ pub struct ApplicationQuestionAnswer {
     pub answer: String,
 }
 impl ApplicationQuestionAnswer {
-    pub fn new() -> Self {
-        Self {
-            id: 0,
-            application_id: 0,
-            question: String::from(""),
-            answer: String::from(""),
-        }
-    }
-    pub fn reset(&mut self) {
-        self.id = 0;
-        self.application_id = 0;
-        self.question = String::from("");
-        self.answer = String::from("");
-    }
-    pub fn fetch_many(offset: i32, max: i32) -> Vec<Self> {
+    pub fn fetch(offset: i32, max: i32) -> HashMap<i32, Self> {
         let expr = format!("
             SELECT 
                 id,
                 application_id,
                 question,
-                answer,
+                answer
             FROM
                 application_question_answer
             ORDER BY
@@ -41,7 +28,7 @@ impl ApplicationQuestionAnswer {
             FETCH FIRST {} ROWS ONLY
             ", offset, max);
         let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
-        let mut new_vec = Vec::<Self>::with_capacity(rows.len());
+        let mut new_map = HashMap::<i32, Self>::with_capacity(rows.len());
         for row in rows {
             let element = Self {
                 id: row.get::<i32, usize>(0),
@@ -49,40 +36,18 @@ impl ApplicationQuestionAnswer {
                 question: row.get::<String, usize>(2),
                 answer: row.get::<String, usize>(3),
             };
-            new_vec.push(element);
+            new_map.insert(element.id, element);
         }
-        return new_vec;
+        return new_map;
     }
-    pub fn fetch_by_id(id: i32) -> Self {
-        let expr = format!("
-            SELECT 
-                id,
-                application_id,
-                question,
-                answer,
-            FROM
-                application_question_answer
-            WHERE
-                id = {}
-            ", id);
-        let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
-        let row = &rows[0];
-        Self {
-            id: row.get::<i32, usize>(0),
-            application_id: row.get::<i32, usize>(1),
-            question: row.get::<String, usize>(2),
-            answer: row.get::<String, usize>(3),
-        }
-    }
-    // Send to db, get resulting id
-    // put id in self.id and return it 
-    pub fn insert_into_db(&mut self) -> i32 {
+    // Send to db, get resulting id in self.id
+    pub fn insert_into_db(&mut self) {
         let expr = format!("
             INSERT INTO application_question_answer
                 (
                 application_id,
                 question,
-                answer,
+                answer
                 ) 
             VALUES 
                 ('{}', '{}', '{}')
@@ -94,6 +59,5 @@ impl ApplicationQuestionAnswer {
         let rows: Vec<sqlx::postgres::PgRow> = my_database::fetch(&expr);
         let row = &rows[0];
         self.id = row.get::<i32, usize>(0);
-        self.id
     }
 }

@@ -19,7 +19,7 @@ use crate::listing_host::ListingHost;
 use crate::listing::Listing;
 use crate::application::Application;
 //use crate::application_selection::ApplicationSelection;
-//use crate::application_question_answer::ApplicationQuestionAnswer;
+use crate::application_question_answer::ApplicationQuestionAnswer;
 use crate::my_text;
 //use crate::my_database;
 
@@ -137,7 +137,7 @@ impl App {
     }
 
     fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
-        egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+        egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
             if self.new_listing_host.id != 0 {
                 if let Some(host) = self.listing_host_query.get(&self.new_listing_host.id) {
                     ui.label(&host.name);
@@ -187,7 +187,7 @@ impl App {
 
     pub fn select_or_add_listing(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().show(ui, |ui| {
-            egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+            egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
                 if self.new_listing.id != 0 {
                     if let Some(listing) = self.listing_query.get(&self.new_listing.id) {
                         ui.label(format!("{}...", &listing.description[0..std::cmp::min(50, listing.description.len())]));
@@ -243,12 +243,30 @@ impl App {
                                 ).unwrap();
                                 self.new_listing.insert_into_db();
                                 self.selected_listing = self.new_listing.id;
+                                self.listing_query.insert(self.new_listing.id, self.new_listing.clone());
                             }
                         });
                     });
                 }
             });
         });
+    }
+
+    fn add_question_answer
+    (
+        ui: &mut egui::Ui, 
+        qas: &mut Vec<ApplicationQuestionAnswer>,
+    ) 
+    {
+        for (id, qa) in qas.iter_mut().enumerate() {
+            ui.label(format!("Question {}:", id));
+            ui.text_edit_multiline(&mut qa.question);
+            ui.label(format!("Answer {}:", id));
+            ui.text_edit_multiline(&mut qa.answer);
+        }
+        if ui.button("New Question").clicked() {
+            qas.push(ApplicationQuestionAnswer::default());
+        }
     }
 
     pub fn add_achievement(&mut self, ui: &mut egui::Ui) {
@@ -272,7 +290,13 @@ impl App {
             self.requested_screen = Screen::Back;
         }
     }
-    pub fn add_application(&mut self, ui: &mut egui::Ui) {
+    pub fn add_application
+    (
+        &mut self, 
+        ui: &mut egui::Ui, 
+        qas: &mut Vec<ApplicationQuestionAnswer>,
+    ) 
+    {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.columns_const(|[col_1, col_2, col_3]| {
                 // application itself
@@ -331,7 +355,7 @@ impl App {
                     }
                     col_2.label("Projects");
                 });
-                // Done
+                // Done and questions
                 col_3.vertical(|col_3| {
                     if col_3.button("Generate PDF").clicked() {
                         let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
@@ -347,6 +371,11 @@ impl App {
                         // Insert into databse
                         self.new_application.insert_into_db();
                         self.selected_application = self.new_application.id;
+                        // Insert all questions and answers
+                        for qa in &mut *qas {
+                            qa.application_id = self.new_application.id;
+                            qa.insert_into_db();
+                        }
                         // Reset all but selected application id
                         *self = App{
                             selected_application: self.selected_application, 
@@ -359,6 +388,7 @@ impl App {
                         *self = Default::default();
                         self.requested_screen = Screen::Back; // Go back to previous screen
                     }
+                    Self::add_question_answer(col_3, qas);
                 });
             });
         });

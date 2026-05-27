@@ -59,7 +59,7 @@ fn select_or_add_postal_address
 ) 
 {
     // Put a bounding box around all ui elements
-    egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+    egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
         // If we already selected an address
         if *selected_address != 0 {
             if let Some(addr) = query.get(selected_address) {
@@ -201,7 +201,7 @@ pub fn new_experience
     egui::ScrollArea::vertical().show(ui, |ui| {
         ui.label("New Experience");
         let mut eei = ee.id;
-        egui::Frame::default().stroke(egui::Stroke::new(1.0, egui::Color32::BLACK)).show(ui, |ui| {
+        egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
             select_or_add_employing_entity(ui, ee_query, &mut eei, ee, addr_query, ee_postal_address);
         });
         ee.id = eei;
