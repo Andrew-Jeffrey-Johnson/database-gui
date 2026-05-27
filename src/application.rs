@@ -40,7 +40,10 @@ impl Application {
                 start_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(1),
                 submitted_timestamptz: row.get::<chrono::DateTime<chrono::Utc>, usize>(2),
                 listing_id: row.get::<i32, usize>(3),
-                resume: row.get::<String, usize>(4),
+                resume: match row.try_get::<String, usize>(4) {
+                    Ok(v) => v,
+                    Err(_e) => Default::default(),
+                },
                 ..Default::default()
             };
             new_vec.insert(element.id, element);
