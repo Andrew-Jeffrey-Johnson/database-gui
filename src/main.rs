@@ -6,6 +6,16 @@ use job_application_helper::employing_entity::EmployingEntity;
 use job_application_helper::application_question_answer::ApplicationQuestionAnswer;
 use std::collections::HashMap;
 
+#[derive(PartialEq, Default)]
+enum Tab {
+    #[default]
+    Home,
+    NewApplication,
+    ViewApplications,
+    NewExperience,
+    NewAchievement,
+}
+
 fn main() -> eframe::Result {
     // Application state
     let mut job_app = app::App::default();
@@ -22,7 +32,7 @@ fn main() -> eframe::Result {
     let mut eeq = HashMap::<i32, EmployingEntity>::default();
     let mut pq = HashMap::<i32, PostalAddress>::default();
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
-    let mut screen_history = vec![app::Screen::Home];
+    let mut current_tab = Tab::Home;
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
         egui::Panel::top("top_panel").show_inside(ui, |ui| {
@@ -39,10 +49,28 @@ fn main() -> eframe::Result {
         });
         // Wrap everything in a CentralPanel so we get some margins and a background color:
         egui::CentralPanel::default().show_inside(ui, |ui| {
-            //println!("Requested Screen: {:?}", job_app.requested_screen);
-            match job_app.requested_screen {
-                app::Screen::AddExperience => { 
-                    let is_done = add_experience::new_experience(
+            // Tab menu
+            ui.horizontal(|ui| {
+                ui.radio_value(&mut current_tab, Tab::Home, "Home");
+                ui.radio_value(&mut current_tab, Tab::ViewApplications, "View Applications");
+                ui.radio_value(&mut current_tab, Tab::NewApplication, "New Application");
+                ui.radio_value(&mut current_tab, Tab::NewExperience, "New Experience");
+                ui.radio_value(&mut current_tab, Tab::NewAchievement, "New Achievement");
+            });
+            match current_tab {
+                Tab::ViewApplications => {
+                    job_app.view_application_query(ui);
+                    return;
+                },
+                Tab::NewApplication => {
+                    job_app.add_application(
+                        ui,
+                        &mut question_answer_vec,
+                    );
+                    return;
+                },
+                Tab::NewExperience => {
+                    let _is_done = add_experience::new_experience(
                         ui,
                         &mut ex,
                         &mut exp,
@@ -53,83 +81,12 @@ fn main() -> eframe::Result {
                         &mut eeq,
                         &mut pq
                     );
-                    if is_done {
-                        job_app.requested_screen = app::Screen::Home;
-                        job_app.home(ui);
-                    }
-
                 },
-                app::Screen::SelectOrAddListing => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::SelectOrAddListing) => (),
-                        _ => screen_history.push(app::Screen::SelectOrAddListing),
-                    };
-                    job_app.select_or_add_listing(ui);
-                },
-                app::Screen::AddApplication => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::AddApplication) => (),
-                        _ => screen_history.push(app::Screen::AddApplication),
-                    };
-                    job_app.add_application(
-                        ui,
-                        &mut question_answer_vec,
-                    );
-                },
-                app::Screen::AddAchievement => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::AddAchievement) => (),
-                        _ => screen_history.push(app::Screen::AddAchievement),
-                    };
+                Tab::NewAchievement => {
                     job_app.add_achievement(ui);
                 },
-                app::Screen::SelectApplication => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::SelectApplication) => (),
-                        _ => screen_history.push(app::Screen::SelectApplication),
-                    };
-                    job_app.view_application_query(ui);
-                },
-                app::Screen::SelectOrAddPostalAddress => { 
-                    match screen_history.last().clone() {
-                        Some(app::Screen::SelectOrAddPostalAddress) => (),
-                        _ => screen_history.push(app::Screen::SelectOrAddPostalAddress),
-                    };
-                    job_app.select_or_add_postal_address(ui);
-                },
-                app::Screen::Back => {
-                    // Use pattern matching to get last two elements
-                    let mut hist = screen_history.iter().rev();
-                    let (_from_screen, to_screen)= (hist.next(), hist.next());
-                    // Go back to the previous screen if we can
-                    match (_from_screen, to_screen) {
-                        (_, Some(t)) => {
-                            job_app.requested_screen = *t;
-                        },
-                        _ => {
-                            println!("Nothing in history. Resetting");
-                            job_app = app::App::default();
-                        },
-                    };
-                    screen_history.pop();
-                },
-                app::Screen::Home => {// Go home as default
-                    match screen_history.last().clone() {
-                        Some(app::Screen::Home) => (),
-                        _ => {
-                            println!("Back at home. Resetting");
-                            // Always reset when we get back home
-                            job_app = app::App::default();
-                            screen_history = vec![app::Screen::Home];
-                        },
-                    };
-                    job_app.home(ui);
-                },
-                _ => { 
-                    // Reset if lost
-                    println!("Uh oh. We're lost. Resetting");
-                    job_app = app::App::default();
-                    screen_history = vec![app::Screen::Home];
+                _ => {
+                    ui.label("Welcome home!");
                 },
             };
         });

@@ -23,23 +23,8 @@ use crate::application_question_answer::ApplicationQuestionAnswer;
 use crate::my_text;
 //use crate::my_database;
 
-#[derive(Default, Debug, PartialEq, Copy, Clone)]
-pub enum Screen {
-    #[default]
-    Home,
-    Back,
-    SelectOrAddPostalAddress,
-    SelectApplication,
-    AddApplication,
-    AddAchievement,
-    SelectOrAddListing,
-    SelectOrAddListingHost,
-    AddExperience,
-}
 #[derive(Default)]
 pub struct App {
-    // App itself
-    pub requested_screen: Screen,
     // PostalAddress
     pub postal_address_query: HashMap<i32, PostalAddress>,
     pub new_postal_address: PostalAddress,
@@ -114,28 +99,6 @@ impl App {
         }
     }
 
-    pub fn home(&mut self, ui: &mut egui::Ui) {
-        ui.columns_const(|[col_1, col_2, col_3]| {
-            col_1.vertical(|col_1| {
-                if col_1.button("Select or Add Address").clicked() {
-                    self.requested_screen = Screen::SelectOrAddPostalAddress;
-                }
-            });
-            col_2.vertical(|col_2| {
-                col_2.label("Applications");
-                if col_2.button("View Applications").clicked() {
-                    self.requested_screen = Screen::SelectApplication;
-                }
-                if col_2.button("New Application").clicked() {
-                    self.requested_screen = Screen::AddApplication;
-                }
-            });
-            col_3.vertical(|col_3| {
-                col_3.label("Resume");
-            });
-        });
-    }
-
     fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
         egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
             if self.new_listing_host.id != 0 {
@@ -185,7 +148,7 @@ impl App {
         });
     }
 
-    pub fn select_or_add_listing(&mut self, ui: &mut egui::Ui) {
+    fn select_or_add_listing(&mut self, ui: &mut egui::Ui) {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
                 if self.new_listing.id != 0 {
@@ -284,10 +247,6 @@ impl App {
             self.new_achievement.experience_id = self.currently_selected_experience;
             self.new_achievement.insert_into_db();
             self.new_achievement = Default::default();
-            self.requested_screen = Screen::Back;
-        }
-        if ui.button("Cancel").clicked() {
-            self.requested_screen = Screen::Back;
         }
     }
     pub fn add_application
@@ -314,7 +273,7 @@ impl App {
                 col_2.vertical(|col_2| {
                     col_2.label("Experiences");
                     if col_2.button("Add Experience").clicked() {
-                        self.requested_screen = Screen::AddExperience;
+                        println!("This button does nothing");
                         return;
                     }
                     if self.experience_query.is_empty() {
@@ -345,13 +304,6 @@ impl App {
                         for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
                             col_2.checkbox(&mut a.is_selected, &a.short_description);
                         }
-                        if col_2.button("Add Achievement").clicked() {
-                            self.currently_selected_experience = *id;
-                            self.requested_screen = Screen::AddAchievement;
-                            self.employing_entity_query = Default::default();
-                            self.achievement_queries = Default::default();
-                            return;
-                        }
                     }
                     col_2.label("Projects");
                 });
@@ -381,12 +333,12 @@ impl App {
                             selected_application: self.selected_application, 
                             ..Default::default()
                         };
-                        self.requested_screen = Screen::Back; // Go back to previous screen
+                        println!("This is the part where you turn around");
                     }
                     if col_3.button("Cancel").clicked() {
                         // Reset everything
                         *self = Default::default();
-                        self.requested_screen = Screen::Back; // Go back to previous screen
+                        println!("This is the part where you turn around");
                     }
                     Self::add_question_answer(col_3, qas);
                 });
@@ -425,54 +377,6 @@ impl App {
                 col_4.label("Listing ID");
                 for (_id, app) in &self.application_query {
                     col_4.label(format!("{}", app.listing_id));
-                }
-            });
-        });
-        if ui.button("Back").clicked() {
-            self.requested_screen = Screen::Back;
-        }
-    }
-    
-    pub fn select_or_add_postal_address(&mut self, ui: &mut egui::Ui) {
-        ui.columns_const(|[col_1, col_2]| {
-            col_1.vertical(|col_1| {
-                col_1.label("Select Address");
-                if self.postal_address_query.is_empty() {
-                    self.postal_address_query = PostalAddress::fetch(0, 100);
-                }
-                for (id, addr) in &mut self.postal_address_query {
-                    col_1.radio_value(
-                        &mut self.selected_postal_address, 
-                        *id,
-                        format!("[id: {}]", id)
-                    );
-                    col_1.label(format!("{}, {}, {}", addr.city, addr.state, addr.zip_code));
-                }
-                if col_1.button("Confirm Selection").clicked() {
-                    self.requested_screen = Screen::Back; // Go back to previous screen
-                }
-            });
-            col_2.vertical(|col_2| {
-                col_2.label("Enter New Address");
-                col_2.label("Name:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.name);
-                col_2.label("Line 1:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.line_1);
-                col_2.label("Line 2:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.line_2);
-                col_2.label("Line 3:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.line_3);
-                col_2.label("City:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.city);
-                col_2.label("State:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.state);
-                col_2.label("Zip Code:");
-                col_2.text_edit_singleline(&mut self.new_postal_address.zip_code);
-                if col_2.button("Confirm Add").clicked() {
-                    // Insert into databse
-                    self.new_postal_address.insert_into_db();
-                    self.selected_postal_address = self.new_postal_address.id;
-                    self.requested_screen = Screen::Back; // Go back to previous screen
                 }
             });
         });

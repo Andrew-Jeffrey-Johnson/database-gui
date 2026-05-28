@@ -7,7 +7,6 @@ use crate::experience::Experience;
 use crate::achievement::Achievement;
 use crate::employing_entity::EmployingEntity;
 use crate::postal_address::PostalAddress;
-use crate::app::Screen;
 
 fn date(
     ui: &mut egui::Ui, 
