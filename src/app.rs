@@ -274,7 +274,6 @@ impl App {
                     col_2.label("Experiences");
                     if col_2.button("Add Experience").clicked() {
                         println!("This button does nothing");
-                        return;
                     }
                     if self.experience_query.is_empty() {
                         self.experience_query = Experience::fetch(0, 100);
