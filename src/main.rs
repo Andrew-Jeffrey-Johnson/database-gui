@@ -4,6 +4,8 @@ use job_application_helper::experience::Experience;
 use job_application_helper::postal_address::PostalAddress;
 use job_application_helper::employing_entity::EmployingEntity;
 use job_application_helper::application_question_answer::ApplicationQuestionAnswer;
+use job_application_helper::achievement::Achievement;
+use job_application_helper::application::Application;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Default)]
@@ -32,6 +34,10 @@ fn main() -> eframe::Result {
     let mut eeq = HashMap::<i32, EmployingEntity>::default();
     let mut pq = HashMap::<i32, PostalAddress>::default();
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
+    let mut new_achievement = Achievement::default();
+    let mut currently_selected_experience = 0;
+    let mut application_query = HashMap::<i32, Application>::default();
+    let mut selected_application = 0;
     let mut current_tab = Tab::Home;
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
@@ -59,8 +65,7 @@ fn main() -> eframe::Result {
             });
             match current_tab {
                 Tab::ViewApplications => {
-                    job_app.view_application_query(ui);
-                    return;
+                    app::view_application_query(ui, &mut application_query, &mut selected_application);
                 },
                 Tab::NewApplication => {
                     job_app.add_application(
@@ -83,7 +88,7 @@ fn main() -> eframe::Result {
                     );
                 },
                 Tab::NewAchievement => {
-                    job_app.add_achievement(ui);
+                    app::add_achievement(ui, &mut new_achievement, currently_selected_experience);
                 },
                 _ => {
                     ui.label("Welcome home!");

@@ -22,6 +22,7 @@ use crate::application::Application;
 use crate::application_question_answer::ApplicationQuestionAnswer;
 use crate::my_text;
 //use crate::my_database;
+use crate::shared_functions::date;
 
 #[derive(Default)]
 pub struct App {
@@ -60,45 +61,78 @@ pub struct App {
     //pub new_project: Project,
 }
 
-impl App {
-    // year, month, day
-    fn date(
-        ui: &mut egui::Ui, 
-        year: &mut i32, 
-        month: &mut u32, 
-        day: &mut u32) 
-    {
-        ui.label("Year:");
-        let mut tmp_year = format!("{}", year);
-        ui.text_edit_singleline(&mut tmp_year);
-        if let Ok(result) = tmp_year.parse() {
-            *year = result;
-        }
-        egui::ComboBox::from_label("Month")
-            .selected_text(format!("{:?}", month))
-            .show_ui(ui, |ui| {
-                ui.selectable_value(month, 1, "January");
-                ui.selectable_value(month, 2, "February");
-                ui.selectable_value(month, 3, "March");
-                ui.selectable_value(month, 4, "April");
-                ui.selectable_value(month, 5, "May");
-                ui.selectable_value(month, 6, "June");
-                ui.selectable_value(month, 7, "July");
-                ui.selectable_value(month, 8, "August");
-                ui.selectable_value(month, 9, "September");
-                ui.selectable_value(month, 10, "October");
-                ui.selectable_value(month, 11, "November");
-                ui.selectable_value(month, 12, "December");
-            }
-        );
-        ui.label("Day:");
-        let mut tmp_day = format!("{}", day);
-        ui.text_edit_singleline(&mut tmp_day);
-        if let Ok(result) = tmp_day.parse() {
-            *day = result;
-        }
+fn add_question_answer
+(
+    ui: &mut egui::Ui, 
+    qas: &mut Vec<ApplicationQuestionAnswer>,
+) 
+{
+    for (id, qa) in qas.iter_mut().enumerate() {
+        ui.label(format!("Question {}:", id));
+        ui.text_edit_multiline(&mut qa.question);
+        ui.label(format!("Answer {}:", id));
+        ui.text_edit_multiline(&mut qa.answer);
     }
+    if ui.button("New Question").clicked() {
+        qas.push(ApplicationQuestionAnswer::default());
+    }
+}
 
+pub fn add_achievement
+(
+    ui: &mut egui::Ui,
+    new_achievement: &mut Achievement,
+    currently_selected_experience: i32,
+) 
+{
+    ui.label(format!("Currently Selected Experience: {}", currently_selected_experience));
+    ui.label("New Achievement");
+    ui.label("Short Description");
+    ui.text_edit_singleline(&mut new_achievement.short_description);
+    ui.label("Defense");
+    ui.text_edit_singleline(&mut new_achievement.defense);
+    if ui.button("Confirm").clicked() {
+        new_achievement.short_description = new_achievement.short_description.replace("'", "''");
+        new_achievement.defense = new_achievement.defense.replace("'", "''");
+        new_achievement.short_description = new_achievement.short_description.replace("&", r"\&");
+        new_achievement.defense = new_achievement.defense.replace("&", r"\&");
+        new_achievement.experience_id = currently_selected_experience;
+        new_achievement.insert_into_db();
+        *new_achievement = Default::default();
+    }
+}
+
+pub fn view_application_query
+(
+    ui: &mut egui::Ui,
+    application_query: &mut HashMap<i32, Application>,
+    selected_application: &mut i32,
+) 
+{
+    if application_query.is_empty() {
+        *application_query = Application::fetch(0, 100);
+    }
+    egui::Grid::new("view_application_query").show(ui, |ui| {
+        ui.label("ID");
+        ui.label("Start");
+        ui.label("End");
+        ui.label("Listing ID");
+        ui.end_row();
+        for (id, app) in & *application_query {
+            ui.radio_value(
+                selected_application,
+                *id,
+                format!("{}", id)
+            );
+            ui.label(format!("{}", app.start_timestamptz));
+            ui.label(format!("{}", app.submitted_timestamptz));
+            ui.label(format!("{}", app.listing_id));
+            ui.end_row();
+        }
+    });
+}
+
+impl App {
     fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
         egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
             if self.new_listing_host.id != 0 {
@@ -191,7 +225,7 @@ impl App {
                             col_2.label("URL:");
                             col_2.text_edit_multiline(&mut self.new_listing.url);
                             col_2.label("Posted Date:");
-                            Self::date(col_2, &mut self.posted_year, &mut self.posted_month, &mut self.posted_day);
+                            date(col_2, &mut self.posted_year, &mut self.posted_month, &mut self.posted_day, 3);
                             col_2.label("Recruiter Contact (NOT IMPLEMENTED YET)");
                             if col_2.button("Confirm Add").clicked() {
                                 // Insert into database
@@ -215,40 +249,6 @@ impl App {
         });
     }
 
-    fn add_question_answer
-    (
-        ui: &mut egui::Ui, 
-        qas: &mut Vec<ApplicationQuestionAnswer>,
-    ) 
-    {
-        for (id, qa) in qas.iter_mut().enumerate() {
-            ui.label(format!("Question {}:", id));
-            ui.text_edit_multiline(&mut qa.question);
-            ui.label(format!("Answer {}:", id));
-            ui.text_edit_multiline(&mut qa.answer);
-        }
-        if ui.button("New Question").clicked() {
-            qas.push(ApplicationQuestionAnswer::default());
-        }
-    }
-
-    pub fn add_achievement(&mut self, ui: &mut egui::Ui) {
-        ui.label(format!("Currently Selected Experience: {}", self.currently_selected_experience));
-        ui.label("New Achievement");
-        ui.label("Short Description");
-        ui.text_edit_singleline(&mut self.new_achievement.short_description);
-        ui.label("Defense");
-        ui.text_edit_singleline(&mut self.new_achievement.defense);
-        if ui.button("Confirm").clicked() {
-            self.new_achievement.short_description = self.new_achievement.short_description.replace("'", "''");
-            self.new_achievement.defense = self.new_achievement.defense.replace("'", "''");
-            self.new_achievement.short_description = self.new_achievement.short_description.replace("&", r"\&");
-            self.new_achievement.defense = self.new_achievement.defense.replace("&", r"\&");
-            self.new_achievement.experience_id = self.currently_selected_experience;
-            self.new_achievement.insert_into_db();
-            self.new_achievement = Default::default();
-        }
-    }
     pub fn add_application
     (
         &mut self, 
@@ -339,44 +339,8 @@ impl App {
                         *self = Default::default();
                         println!("This is the part where you turn around");
                     }
-                    Self::add_question_answer(col_3, qas);
+                    add_question_answer(col_3, qas);
                 });
-            });
-        });
-    }
-
-    pub fn view_application_query(&mut self, ui: &mut egui::Ui) {
-        if self.application_query.is_empty() {
-            self.application_query = Application::fetch(0, 100);
-        }
-        ui.columns_const(|[col_1, col_2, col_3, col_4]| {
-            col_1.vertical(|col_1| {
-                col_1.label("ID");
-                for (id, _app) in &mut self.application_query {
-                    col_1.radio_value(
-                        &mut self.selected_application,
-                        *id,
-                        format!("{}", id)
-                    );
-                }
-            });
-            col_2.vertical(|col_2| {
-                col_2.label("Start");
-                for (_id, app) in &self.application_query {
-                    col_2.label(format!("{}", app.start_timestamptz));
-                }
-            });
-            col_3.vertical(|col_3| {
-                col_3.label("End");
-                for (_id, app) in &self.application_query {
-                    col_3.label(format!("{}", app.submitted_timestamptz));
-                }
-            });
-            col_4.vertical(|col_4| {
-                col_4.label("Listing ID");
-                for (_id, app) in &self.application_query {
-                    col_4.label(format!("{}", app.listing_id));
-                }
             });
         });
     }
