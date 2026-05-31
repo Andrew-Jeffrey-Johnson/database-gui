@@ -44,7 +44,6 @@ pub struct App {
     // ListingHost
     pub listing_host_query: HashMap<i32, ListingHost>,
     pub new_listing_host: ListingHost,
-    pub selected_listing_host: i32,
     // EmployingEntity
     pub employing_entity_query: HashMap<i32, EmployingEntity>,
     pub new_employing_entity: EmployingEntity,
@@ -133,10 +132,16 @@ pub fn view_application_query
 }
 
 impl App {
-    fn select_or_add_listing_host(&mut self, ui: &mut egui::Ui) {
+    fn select_or_add_listing_host
+    (
+        ui: &mut egui::Ui,
+        new_listing_host: &mut ListingHost,
+        listing_host_query: &mut HashMap<i32, ListingHost>,
+    ) 
+    {
         egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
-            if self.new_listing_host.id != 0 {
-                if let Some(host) = self.listing_host_query.get(&self.new_listing_host.id) {
+            if new_listing_host.id != 0 {
+                if let Some(host) = listing_host_query.get(&new_listing_host.id) {
                     ui.label(&host.name);
                     ui.label(&host.url);
                 }
@@ -144,19 +149,19 @@ impl App {
                     ui.label("Oops. Something went wrong.");
                 }
                 if ui.button("Change Listing Host").clicked() {
-                    self.new_listing_host.id = 0;
+                    new_listing_host.id = 0;
                 }
             }
             else {
                 ui.columns_const(|[col_1, col_2]| {
                     col_1.vertical(|col_1| {
                         col_1.label("Select Listing Host");
-                        if self.listing_host_query.is_empty() {
-                            self.listing_host_query = ListingHost::fetch(0, 100);
+                        if listing_host_query.is_empty() {
+                            *listing_host_query = ListingHost::fetch(0, 100);
                         }
-                        for (id, listing_host) in &mut self.listing_host_query {
+                        for (id, listing_host) in listing_host_query {
                             col_1.radio_value(
-                                &mut self.new_listing_host.id, 
+                                &mut new_listing_host.id, 
                                 *id,
                                 format!("[id: {}]", id)
                             );
@@ -168,13 +173,12 @@ impl App {
                     col_2.vertical(|col_2| {
                         col_2.label("Add Listing Host");
                         col_2.label("Name:");
-                        col_2.text_edit_multiline(&mut self.new_listing_host.name);
+                        col_2.text_edit_multiline(&mut new_listing_host.name);
                         col_2.label("URL:");
-                        col_2.text_edit_multiline(&mut self.new_listing_host.url);
+                        col_2.text_edit_multiline(&mut new_listing_host.url);
                         if col_2.button("Confirm Add").clicked() {
                             // Insert into databse
-                            self.new_listing_host.insert_into_db();
-                            self.selected_listing_host = self.new_listing_host.id;
+                            new_listing_host.insert_into_db();
                         }
                     });
                 });
@@ -182,7 +186,14 @@ impl App {
         });
     }
 
-    fn select_or_add_listing(&mut self, ui: &mut egui::Ui) {
+    fn select_or_add_listing
+    (
+        &mut self, 
+        ui: &mut egui::Ui,
+        new_listing_host: &mut ListingHost,
+        listing_host_query: &mut HashMap<i32, ListingHost>,
+    ) 
+    {
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Frame::default().stroke(egui::Stroke::new(1.0_f32, egui::Color32::BLACK)).show(ui, |ui| {
                 if self.new_listing.id != 0 {
@@ -219,7 +230,7 @@ impl App {
                         });
                         col_2.vertical(|col_2| {
                             col_2.label("Add Listing");
-                            self.select_or_add_listing_host(col_2);
+                            Self::select_or_add_listing_host(col_2, new_listing_host,listing_host_query);
                             col_2.label("Description:");
                             col_2.text_edit_multiline(&mut self.new_listing.description);
                             col_2.label("URL:");
@@ -254,6 +265,8 @@ impl App {
         &mut self, 
         ui: &mut egui::Ui, 
         qas: &mut Vec<ApplicationQuestionAnswer>,
+        new_listing_host: &mut ListingHost,
+        listing_host_query: &mut HashMap<i32, ListingHost>,
     ) 
     {
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -267,7 +280,7 @@ impl App {
                     }
                     col_1.label(format!("Started: {}", self.new_application.start_timestamptz));
                     col_1.label("Select or Add Listing");
-                    self.select_or_add_listing(col_1);
+                    self.select_or_add_listing(col_1, new_listing_host,listing_host_query);
                 });
                 // achievements and project highlights
                 col_2.vertical(|col_2| {
@@ -324,6 +337,8 @@ impl App {
                         self.selected_application = self.new_application.id;
                         // Insert all questions and answers
                         for qa in &mut *qas {
+                            qa.question = qa.question.replace("'", "''");
+                            qa.answer = qa.answer.replace("'", "''");
                             qa.application_id = self.new_application.id;
                             qa.insert_into_db();
                         }

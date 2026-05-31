@@ -6,6 +6,7 @@ use job_application_helper::employing_entity::EmployingEntity;
 use job_application_helper::application_question_answer::ApplicationQuestionAnswer;
 use job_application_helper::achievement::Achievement;
 use job_application_helper::application::Application;
+use job_application_helper::listing_host::ListingHost;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Default)]
@@ -38,6 +39,8 @@ fn main() -> eframe::Result {
     let mut currently_selected_experience = 0;
     let mut application_query = HashMap::<i32, Application>::default();
     let mut selected_application = 0;
+    let mut new_listing_host = ListingHost::default();
+    let mut listing_host_query = HashMap::<i32, ListingHost>::default();
     let mut current_tab = Tab::Home;
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
@@ -71,6 +74,8 @@ fn main() -> eframe::Result {
                     job_app.add_application(
                         ui,
                         &mut question_answer_vec,
+                        &mut new_listing_host,
+                        &mut listing_host_query,
                     );
                     return;
                 },
