@@ -267,6 +267,7 @@ impl App {
         qas: &mut Vec<ApplicationQuestionAnswer>,
         new_listing_host: &mut ListingHost,
         listing_host_query: &mut HashMap<i32, ListingHost>,
+        listing_host_sorted: &mut Vec<&mut ListingHost>,
     ) 
     {
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -313,9 +314,12 @@ impl App {
                             None => col_2.label("No Employing Entity Found"),
                             Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
                         };
-                        for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
+                        for a in listing_host_sorted {
                             col_2.checkbox(&mut a.is_selected, &a.short_description);
                         }
+                        //for (_a_id, a) in self.achievement_queries.get_mut(id).unwrap() {
+                        //    col_2.checkbox(&mut a.is_selected, &a.short_description);
+                        //}
                     }
                     col_2.label("Projects");
                 });

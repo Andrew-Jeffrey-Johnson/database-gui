@@ -41,6 +41,7 @@ fn main() -> eframe::Result {
     let mut selected_application = 0;
     let mut new_listing_host = ListingHost::default();
     let mut listing_host_query = HashMap::<i32, ListingHost>::default();
+    let mut listing_host_sorted = Vec<&mut ListingHost>::default();
     let mut current_tab = Tab::Home;
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
@@ -76,6 +77,7 @@ fn main() -> eframe::Result {
                         &mut question_answer_vec,
                         &mut new_listing_host,
                         &mut listing_host_query,
+                        &mut listing_host_sorted,
                     );
                     return;
                 },
