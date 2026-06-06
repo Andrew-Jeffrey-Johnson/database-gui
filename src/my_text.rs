@@ -1,6 +1,9 @@
 
-use crate::app::App;
+use std::collections::HashMap;
+use crate::experience::Experience;
 use crate::postal_address::PostalAddress;
+use crate::employing_entity::EmployingEntity;
+use crate::achievement::Achievement;
 use std::cmp;
 
 #[derive(Clone, PartialEq, Debug)]
@@ -130,7 +133,9 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
 
 pub fn latex_gen(
     summary: &String,
-    app: &mut App,
+    experience_query: &HashMap<i32, Experience>,
+    employing_entity_query: &HashMap<i32, EmployingEntity>,
+    achievement_queries: &HashMap<i32, HashMap<i32, Achievement>>,
     )
     -> String
     {
@@ -175,13 +180,13 @@ pub fn latex_gen(
         \vspace{3pt}
         ");
     let mut professional_experience_body = Vec::<String>::new();
-    let exps = &app.experience_query;
-    let enti = &app.employing_entity_query;
-    let achs = &mut app.achievement_queries;
+    let exps = experience_query;
+    let enti = employing_entity_query;
+    let achs = achievement_queries;
     // Only add the experience if there is at least one selected achievement
     for (id, experience) in exps {
         let mut has_achievements = false;
-        for (_a_id, a) in achs.get_mut(id).unwrap() {
+        for (_a_id, a) in achs.get(id).unwrap() {
             if a.is_selected {
                 has_achievements = true;
                 break;
@@ -227,7 +232,7 @@ pub fn latex_gen(
                 \begin{{itemize}}
                 ", experience.title,));
             }
-            for (_a_id, a) in achs.get_mut(id).unwrap() {
+            for (_a_id, a) in achs.get(id).unwrap() {
                 if a.is_selected {
                     professional_experience_body.push(format!(r"
                         \item {}

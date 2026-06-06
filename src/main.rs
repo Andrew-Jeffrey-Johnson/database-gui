@@ -7,6 +7,8 @@ use job_application_helper::application_question_answer::ApplicationQuestionAnsw
 use job_application_helper::achievement::Achievement;
 use job_application_helper::application::Application;
 use job_application_helper::listing_host::ListingHost;
+use job_application_helper::listing::Listing;
+
 use std::collections::HashMap;
 
 #[derive(PartialEq, Default)]
@@ -21,7 +23,6 @@ enum Tab {
 
 fn main() -> eframe::Result {
     // Application state
-    let mut job_app = app::App::default();
     let mut ex = Experience::default();
     let mut exp = PostalAddress::default();
     let mut start_year: i32 = 0;
@@ -30,10 +31,17 @@ fn main() -> eframe::Result {
     let mut end_year: i32 = 0;
     let mut end_month: u32 = 0;
     let mut end_day: u32 = 0;
+    let mut posted_year: i32 = 0;
+    let mut posted_month: u32 = 0;
+    let mut posted_day: u32 = 0;
     let mut ee = EmployingEntity::default();
     let mut eep = PostalAddress::default();
     let mut eeq = HashMap::<i32, EmployingEntity>::default();
     let mut pq = HashMap::<i32, PostalAddress>::default();
+    let mut new_application = Application::default();
+    let mut experience_query = HashMap::<i32, Experience>::default();
+    let mut employing_entity_query = HashMap::<i32, EmployingEntity>::default();
+    let mut achievement_queries = HashMap::<i32,HashMap<i32, Achievement>>::default();
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
     let mut new_achievement = Achievement::default();
     let mut currently_selected_experience = 0;
@@ -41,7 +49,9 @@ fn main() -> eframe::Result {
     let mut selected_application = 0;
     let mut new_listing_host = ListingHost::default();
     let mut listing_host_query = HashMap::<i32, ListingHost>::default();
-    let mut listing_host_sorted = Vec<&mut ListingHost>::default();
+    let mut listing_host_sorted = Vec::<&ListingHost>::default();
+    let mut new_listing = Listing::default();
+    let mut listing_query = HashMap::<i32, Listing>::default();
     let mut current_tab = Tab::Home;
     let options = eframe::NativeOptions::default();
     eframe::run_ui_native("My egui App", options, move |ui, _frame| {
@@ -72,12 +82,21 @@ fn main() -> eframe::Result {
                     app::view_application_query(ui, &mut application_query, &mut selected_application);
                 },
                 Tab::NewApplication => {
-                    job_app.add_application(
+                    app::add_application(
                         ui,
+                        &mut new_application,
+                        &mut experience_query,
+                        &mut employing_entity_query,
+                        &mut achievement_queries,
                         &mut question_answer_vec,
                         &mut new_listing_host,
                         &mut listing_host_query,
                         &mut listing_host_sorted,
+                        &mut posted_year,
+                        &mut posted_month,
+                        &mut posted_day,
+                        &mut new_listing,
+                        &mut listing_query,
                     );
                     return;
                 },
