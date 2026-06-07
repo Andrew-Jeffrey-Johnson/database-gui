@@ -64,27 +64,25 @@ pub fn add_achievement
     }
 }
 
-pub fn view_application_query
+pub fn select_application_query
 (
     ui: &mut egui::Ui,
-    application_query: &mut HashMap<i32, Application>,
-    selected_application: &mut i32,
+    application_query: &Vec<Application>,
+    mut selected_application: Application,
 ) 
+    -> Application
 {
-    if application_query.is_empty() {
-        *application_query = Application::fetch(0, 100);
-    }
     egui::Grid::new("view_application_query").show(ui, |ui| {
         ui.label("ID");
         ui.label("Start");
         ui.label("End");
         ui.label("Listing ID");
         ui.end_row();
-        for (id, app) in & *application_query {
+        for app in application_query {
             ui.radio_value(
-                selected_application,
-                *id,
-                format!("{}", id)
+                &mut selected_application,
+                app.clone(),
+                format!("{}", app.id)
             );
             ui.label(format!("{}", app.start_timestamptz));
             ui.label(format!("{}", app.submitted_timestamptz));
@@ -92,6 +90,7 @@ pub fn view_application_query
             ui.end_row();
         }
     });
+    return selected_application;
 }
 
 fn select_or_add_listing_host

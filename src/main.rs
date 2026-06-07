@@ -45,10 +45,13 @@ fn main() -> eframe::Result {
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
     let mut new_achievement = Achievement::default();
     let mut currently_selected_experience = 0;
-    let mut application_query = HashMap::<i32, Application>::default();
-    let mut selected_application = 0;
+    // Get previous applications (first 100) and sort them by submitted date
+    let mut application_query = Application::fetch(0,100);
+    let mut application_vec: Vec<_> = application_query.clone().into_iter().map(|(_k, v)| v).collect();
+    application_vec.sort_by(|a, b| a.submitted_timestamptz.cmp(&b.submitted_timestamptz));
+    let mut selected_application = new_application.clone();
     let mut new_listing_host = ListingHost::default();
-    let mut listing_host_query = HashMap::<i32, ListingHost>::default();
+    let mut listing_host_query = ListingHost::fetch(0,100);
     let mut listing_host_sorted = Vec::<&ListingHost>::default();
     let mut new_listing = Listing::default();
     let mut listing_query = HashMap::<i32, Listing>::default();
@@ -79,7 +82,7 @@ fn main() -> eframe::Result {
             });
             match current_tab {
                 Tab::ViewApplications => {
-                    app::view_application_query(ui, &mut application_query, &mut selected_application);
+                    selected_application = app::select_application_query(ui, &application_vec, selected_application.clone());
                 },
                 Tab::NewApplication => {
                     app::add_application(
