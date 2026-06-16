@@ -107,6 +107,7 @@ fn main() -> eframe::Result {
                     if submitted {
                         new_application = Default::default();
                         experience_query = Default::default();
+                        experience_vec = Default::default();
                         employing_entity_query = Default::default();
                         achievement_queries = Default::default();
                         question_answer_vec = Default::default();
