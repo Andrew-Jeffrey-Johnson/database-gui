@@ -133,7 +133,7 @@ pub fn segment_description(desc: &str) -> Vec<Vec<LabelPkg>> {
 
 pub fn latex_gen(
     summary: &String,
-    experience_query: &HashMap<i32, Experience>,
+    experience_vec: &Vec<Experience>,
     employing_entity_query: &HashMap<i32, EmployingEntity>,
     achievement_queries: &HashMap<i32, HashMap<i32, Achievement>>,
     )
@@ -180,13 +180,13 @@ pub fn latex_gen(
         \vspace{3pt}
         ");
     let mut professional_experience_body = Vec::<String>::new();
-    let exps = experience_query;
+    let exps = experience_vec;
     let enti = employing_entity_query;
     let achs = achievement_queries;
     // Only add the experience if there is at least one selected achievement
-    for (id, experience) in exps {
+    for experience in exps {
         let mut has_achievements = false;
-        for (_a_id, a) in achs.get(id).unwrap() {
+        for (_a_id, a) in achs.get(&experience.id).unwrap() {
             if a.is_selected {
                 has_achievements = true;
                 break;
@@ -232,7 +232,7 @@ pub fn latex_gen(
                 \begin{{itemize}}
                 ", experience.title,));
             }
-            for (_a_id, a) in achs.get(id).unwrap() {
+            for (_a_id, a) in achs.get(&experience.id).unwrap() {
                 if a.is_selected {
                     professional_experience_body.push(format!(r"
                         \item {}

@@ -228,7 +228,7 @@ pub fn add_application
 (
     ui: &mut egui::Ui, 
     new_application: &mut Application,
-    experience_query: &mut HashMap<i32, Experience>,
+    experience_vec: &Vec<Experience>,
     employing_entity_query: &mut HashMap<i32, EmployingEntity>,
     achievement_queries: &mut HashMap<i32, HashMap<i32, Achievement>>,
     qas: &mut Vec<ApplicationQuestionAnswer>,
@@ -272,11 +272,8 @@ pub fn add_application
                 if col_2.button("Add Experience").clicked() {
                     println!("This button does nothing");
                 }
-                if experience_query.is_empty() {
-                    *experience_query = Experience::fetch(0, 100);
-                }
                 // Display all achievements from all experiences
-                for (id, experience) in &*experience_query {
+                for experience in experience_vec {
                     // Employing Entity
                     if !employing_entity_query.contains_key(&experience.employing_entity_id) {
                         // Get a bunch at a time. Not just one at a time
@@ -288,16 +285,16 @@ pub fn add_application
                     }
                     let employing_entity = employing_entity_query.get(&experience.employing_entity_id);
                     // Achievements
-                    if !achievement_queries.contains_key(id) {
-                        let new_hashmap = Achievement::fetch_using_experience(0, 100, *id);
-                        achievement_queries.insert(*id, new_hashmap);
+                    if !achievement_queries.contains_key(&experience.id) {
+                        let new_hashmap = Achievement::fetch_using_experience(0, 100, experience.id);
+                        achievement_queries.insert(experience.id, new_hashmap);
                     }
-                    col_2.label(format!("[ID: {}] Title: {}", *id, experience.title));
+                    col_2.label(format!("[ID: {}] Title: {}", experience.id, experience.title));
                     match employing_entity {
                         None => col_2.label("No Employing Entity Found"),
                         Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
                     };
-                    for (_a_id, a) in achievement_queries.get_mut(id).unwrap() {
+                    for (_a_id, a) in achievement_queries.get_mut(&experience.id).unwrap() {
                         col_2.checkbox(&mut a.is_selected, &a.short_description);
                     }
                 }
@@ -308,12 +305,12 @@ pub fn add_application
                 if col_3.button("Generate PDF").clicked() {
                     let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
 experience in software engineering, security, web development, and databases.");
-                    new_application.resume = my_text::latex_gen(&summary, &*experience_query, &employing_entity_query, &achievement_queries);
+                    new_application.resume = my_text::latex_gen(&summary, &*experience_vec, &employing_entity_query, &achievement_queries);
                 }
                 if col_3.button("Submit").clicked() {
                     let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
 experience in software engineering, security, web development, and databases.");
-                    new_application.resume = my_text::latex_gen(&summary, &*experience_query, &employing_entity_query, &achievement_queries);
+                    new_application.resume = my_text::latex_gen(&summary, &*experience_vec, &employing_entity_query, &achievement_queries);
                     new_application.submitted_timestamptz = chrono::offset::Utc::now();
                     new_application.listing_id = new_listing.id;
                     // Insert into databse

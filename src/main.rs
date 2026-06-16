@@ -39,7 +39,10 @@ fn main() -> eframe::Result {
     let mut eeq = HashMap::<i32, EmployingEntity>::default();
     let mut pq = HashMap::<i32, PostalAddress>::default();
     let mut new_application = Application::default();
-    let mut experience_query = HashMap::<i32, Experience>::default();
+    // Get experiences (first 100) and sort them in reverse chronological order
+    let mut experience_query = Experience::fetch(0, 100);
+    let mut experience_vec: Vec<_> = experience_query.clone().into_iter().map(|(_k, v)| v).collect();
+    experience_vec.sort_by(|a, b| b.start_timestamptz.cmp(&a.start_timestamptz)); 
     let mut employing_entity_query = HashMap::<i32, EmployingEntity>::default();
     let mut achievement_queries = HashMap::<i32,HashMap<i32, Achievement>>::default();
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
@@ -88,7 +91,7 @@ fn main() -> eframe::Result {
                     let submitted = app::add_application(
                         ui,
                         &mut new_application,
-                        &mut experience_query,
+                        &experience_vec,
                         &mut employing_entity_query,
                         &mut achievement_queries,
                         &mut question_answer_vec,
