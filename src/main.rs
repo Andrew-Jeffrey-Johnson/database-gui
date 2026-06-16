@@ -22,7 +22,7 @@ enum Tab {
 }
 
 fn main() -> eframe::Result {
-    // Application state
+    // gui state
     let mut ex = Experience::default();
     let mut exp = PostalAddress::default();
     let mut start_year: i32 = 0;
@@ -85,7 +85,7 @@ fn main() -> eframe::Result {
                     selected_application = app::select_application_query(ui, &application_vec, selected_application.clone());
                 },
                 Tab::NewApplication => {
-                    app::add_application(
+                    let submitted = app::add_application(
                         ui,
                         &mut new_application,
                         &mut experience_query,
@@ -101,7 +101,21 @@ fn main() -> eframe::Result {
                         &mut new_listing,
                         &mut listing_query,
                     );
-                    return;
+                    if submitted {
+                        new_application = Default::default();
+                        experience_query = Default::default();
+                        employing_entity_query = Default::default();
+                        achievement_queries = Default::default();
+                        question_answer_vec = Default::default();
+                        new_listing_host = Default::default();
+                        listing_host_query = Default::default();
+                        listing_host_sorted = Default::default();
+                        posted_year = Default::default();
+                        posted_month = Default::default();
+                        posted_day = Default::default();
+                        new_listing = Default::default();
+                        listing_query = Default::default();
+                    }
                 },
                 Tab::NewExperience => {
                     let _is_done = add_experience::new_experience(

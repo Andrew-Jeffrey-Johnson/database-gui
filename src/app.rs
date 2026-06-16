@@ -241,7 +241,9 @@ pub fn add_application
     new_listing: &mut Listing,
     listing_query: &mut HashMap<i32, Listing>,
 ) 
+    -> bool
 {
+    let mut is_submitted = false;
     egui::ScrollArea::vertical().show(ui, |ui| {
         ui.columns_const(|[col_1, col_2, col_3]| {
             // application itself
@@ -323,11 +325,12 @@ experience in software engineering, security, web development, and databases.");
                         qa.application_id = new_application.id;
                         qa.insert_into_db();
                     }
-                    println!("This is the part where you turn around");
+                    is_submitted = true;
                 }
                 add_question_answer(col_3, qas);
             });
         });
     });
+    return is_submitted;
 }
 
