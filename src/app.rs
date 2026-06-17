@@ -6,21 +6,14 @@ use chrono::TimeZone;
 use std::cmp;
 use chrono::Utc;
 use std::collections::HashMap;
-//use crate::contact::Contact;
 use crate::employing_entity::EmployingEntity;
 use crate::experience::Experience;
 use crate::achievement::Achievement;
-//use crate::achievement_variant::AchievementVariant;
-//use crate::project::Project;
-//use crate::project_highlight::ProjectHighlight;
-//use crate::project_highlight_variant::ProjectHighlightVariant;
 use crate::listing_host::ListingHost;
 use crate::listing::Listing;
 use crate::application::Application;
-//use crate::application_selection::ApplicationSelection;
 use crate::application_question_answer::ApplicationQuestionAnswer;
 use crate::my_text;
-//use crate::my_database;
 use crate::shared_functions::date;
 
 fn add_question_answer
@@ -230,7 +223,7 @@ pub fn add_application
     new_application: &mut Application,
     experience_vec: &Vec<Experience>,
     employing_entity_query: &mut HashMap<i32, EmployingEntity>,
-    achievement_queries: &mut HashMap<i32, HashMap<i32, Achievement>>,
+    achievement_queries: &mut HashMap<i32, Vec<Achievement>>,
     qas: &mut Vec<ApplicationQuestionAnswer>,
     new_listing_host: &mut ListingHost,
     listing_host_query: &mut HashMap<i32, ListingHost>,
@@ -284,17 +277,13 @@ pub fn add_application
                         employing_entity_query.extend(new_query.into_iter());
                     }
                     let employing_entity = employing_entity_query.get(&experience.employing_entity_id);
-                    // Achievements
-                    if !achievement_queries.contains_key(&experience.id) {
-                        let new_hashmap = Achievement::fetch_using_experience(0, 100, experience.id);
-                        achievement_queries.insert(experience.id, new_hashmap);
-                    }
                     col_2.label(format!("[ID: {}] Title: {}", experience.id, experience.title));
                     match employing_entity {
                         None => col_2.label("No Employing Entity Found"),
                         Some(e) => col_2.label(format!("Employing Entity: {}", e.name))
                     };
-                    for (_a_id, a) in achievement_queries.get_mut(&experience.id).unwrap() {
+                    // Achievements
+                    for a in achievement_queries.get_mut(&experience.id).unwrap() {
                         col_2.checkbox(&mut a.is_selected, &a.short_description);
                     }
                 }
@@ -305,7 +294,7 @@ pub fn add_application
                 if col_3.button("Generate PDF").clicked() {
                     let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work
 experience in software engineering, security, web development, and databases.");
-                    new_application.resume = my_text::latex_gen(&summary, &*experience_vec, &employing_entity_query, &achievement_queries);
+                    new_application.resume = my_text::latex_gen(&summary, &*experience_vec, &employing_entity_query, &*achievement_queries);
                 }
                 if col_3.button("Submit").clicked() {
                     let summary = String::from("Security-focused software engineer with a Master of Engineering in Computer Science and over a year of work

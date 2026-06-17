@@ -135,7 +135,7 @@ pub fn latex_gen(
     summary: &String,
     experience_vec: &Vec<Experience>,
     employing_entity_query: &HashMap<i32, EmployingEntity>,
-    achievement_queries: &HashMap<i32, HashMap<i32, Achievement>>,
+    achievement_queries: &HashMap<i32, Vec<Achievement>>,
     )
     -> String
     {
@@ -186,7 +186,7 @@ pub fn latex_gen(
     // Only add the experience if there is at least one selected achievement
     for experience in exps {
         let mut has_achievements = false;
-        for (_a_id, a) in achs.get(&experience.id).unwrap() {
+        for a in achs.get(&experience.id).unwrap() {
             if a.is_selected {
                 has_achievements = true;
                 break;
@@ -232,7 +232,7 @@ pub fn latex_gen(
                 \begin{{itemize}}
                 ", experience.title,));
             }
-            for (_a_id, a) in achs.get(&experience.id).unwrap() {
+            for a in achs.get(&experience.id).unwrap() {
                 if a.is_selected {
                     professional_experience_body.push(format!(r"
                         \item {}

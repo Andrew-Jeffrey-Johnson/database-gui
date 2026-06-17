@@ -43,13 +43,20 @@ fn main() -> eframe::Result {
     let mut experience_query = Experience::fetch(0, 100);
     let mut experience_vec: Vec<_> = experience_query.clone().into_iter().map(|(_k, v)| v).collect();
     experience_vec.sort_by(|a, b| b.start_timestamptz.cmp(&a.start_timestamptz)); 
+    // For each experience, fetch all the achievements
+    let mut achievement_queries = HashMap::<i32,Vec<Achievement>>::default();
+    for experience in &experience_vec {
+        let new_hashmap = Achievement::fetch_using_experience(0, 1000, experience.id);
+        let mut new_vec: Vec<_> = new_hashmap.clone().into_iter().map(|(_k, v)| v).collect();
+        new_vec.sort_by(|a, b| a.id.cmp(&b.id));
+        achievement_queries.insert(experience.id, new_vec);
+    }
     let mut employing_entity_query = HashMap::<i32, EmployingEntity>::default();
-    let mut achievement_queries = HashMap::<i32,HashMap<i32, Achievement>>::default();
     let mut question_answer_vec = Vec::<ApplicationQuestionAnswer>::default();
     let mut new_achievement = Achievement::default();
     let mut currently_selected_experience = 0;
     // Get previous applications (first 100) and sort them by submitted date
-    let mut application_query = Application::fetch(0,100);
+    let application_query = Application::fetch(0,100);
     let mut application_vec: Vec<_> = application_query.clone().into_iter().map(|(_k, v)| v).collect();
     application_vec.sort_by(|a, b| a.submitted_timestamptz.cmp(&b.submitted_timestamptz));
     let mut selected_application = new_application.clone();
@@ -106,8 +113,9 @@ fn main() -> eframe::Result {
                     );
                     if submitted {
                         new_application = Default::default();
-                        experience_query = Default::default();
-                        experience_vec = Default::default();
+                        experience_query = Experience::fetch(0, 100);
+                        experience_vec = experience_query.clone().into_iter().map(|(_k, v)| v).collect();
+                        experience_vec.sort_by(|a, b| b.start_timestamptz.cmp(&a.start_timestamptz)); 
                         employing_entity_query = Default::default();
                         achievement_queries = Default::default();
                         question_answer_vec = Default::default();
@@ -144,3 +152,4 @@ fn main() -> eframe::Result {
         });
     })
 }
+
